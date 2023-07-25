@@ -8,17 +8,7 @@ from simulation.SimulationTransform import SimulationTransform
 from colav.CBF import CBF
 
 from time import time
-
-par_path = str(Path(os.path.dirname(__file__)).parents[2])
-library_path = par_path + '\\lib'
-sys.path.append(library_path)
-
-module_path = par_path + '\\models\\RVG_maneuvering4DOF'
-sys.path.append(module_path)
-
-import kinematics as km
-import visualization as viz
-import Module_RVGManModel4DOF as model
+from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
 
 
 class CBF_4DOF(CBF):

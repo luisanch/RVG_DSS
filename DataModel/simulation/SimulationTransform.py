@@ -1,7 +1,6 @@
 import pandas as pd 
 import math 
 import pymap3d as pm
-from utils.Point import Point
 
 class SimulationTransform:
     def __init__(self, offsets=[0,0,0,0,0], join_type = 'merge'):
