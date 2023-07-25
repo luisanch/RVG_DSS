@@ -1,0 +1,6 @@
+
+Dashboard/node_modules/
+Server/node_modules/
+Server/build/
+DataModel/__pycache__/
+DataModel/*/__pycache__/ 
