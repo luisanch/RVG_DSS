@@ -21,8 +21,7 @@ class FastLogger(Logger):
         self._overwrite_headers = overwrite_headers
         self._log_verbose = verbose[0]
         self._buffer_verbose = verbose[1]
-        self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name')
-        self.simulation_data_name = "simulation_frame" 
+        self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name') 
 
         if not self._overwrite_headers:
             self._load_headers()

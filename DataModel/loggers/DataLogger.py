@@ -8,7 +8,7 @@ class SortedData(object):
         return getattr(self, item)
 
 class DataLogger(Logger):
-    def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, frame_transform=None, verbose=False):
+    def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, verbose=False):
         
         #attribute aliases for incoming messages
         self.df_aliases = df_aliases
@@ -27,9 +27,7 @@ class DataLogger(Logger):
         self._overwrite_headers = overwrite_headers
         self._log_verbose = verbose[0]
         self._buffer_verbose = verbose[1]
-        self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name')
-        self._frame_transform = frame_transform
-        self.simulation_data_name = "simulation_frame"
+        self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name') 
 
         if not self._overwrite_headers:
             self._load_headers()
@@ -143,12 +141,6 @@ class DataLogger(Logger):
 
     def _save_dataframes(self):
         if self._save_df:
-
-            if self._frame_transform is not None:
-                if hasattr(self.sorted_data, '$GPGGA_ext') and hasattr(self.sorted_data, '$PSIMSNS_ext'): 
-                    self._frame_transform.gps_data = self.sorted_data['$GPGGA_ext']
-                    self._frame_transform.attitude_data = self.sorted_data['$PSIMSNS_ext']
-                    setattr(self.sorted_data, self.simulation_data_name, self._frame_transform.get_converted_frame()) 
 
             print("Saving data...")
             for atr, df in self.sorted_data.__dict__.items(): 

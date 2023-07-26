@@ -4,20 +4,19 @@ from scipy.signal import butter, filtfilt
 import json
 from parsers.LogParser import LogParser
 from loggers.FastLogger import FastLogger 
-from simulation.SimulationServer import SimulationServer
-from simulation.SimulationTransform import SimulationTransform
+from simulation.SimulationServer import SimulationServer 
 from utils.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager
 import math
 from time import time
 
 class SimulationServerReplay(SimulationServer):
-    def __init__(self, buffer_size, data_logger = FastLogger, address= None, logParser = LogParser,
-                websocket = DashboardWebsocket, transform=SimulationTransform(), 
+    def __init__(self, data_logger = FastLogger, logParser = LogParser,
+                websocket = DashboardWebsocket, 
                 distance_filter=None, predicted_interval = 30 ,colav_manager = ColavManager,
                 filt_order = 3, filt_cutfreq = 0.1, filt_nyqfreq = 0.5):
-        super(SimulationServerReplay, self).__init__(buffer_size, data_logger, address,
-                websocket, transform, distance_filter, predicted_interval ,colav_manager,
+        super(SimulationServerReplay, self).__init__( data_logger,
+                websocket, distance_filter, predicted_interval ,colav_manager,
                 filt_order, filt_cutfreq, filt_nyqfreq)
         self.logParser = logParser
         

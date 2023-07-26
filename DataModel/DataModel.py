@@ -78,19 +78,6 @@ class DataModel:
                 suffixFilter=self.suffixFilter)
             
         #Initialize Data Logger
-        self.simulation_origo_offset = ( 
-            10.3929167,   #lon offset
-            63.435166667, #lat offset
-            12,           #altitude offset
-            0, #-90          #heading offset
-            0,           #heading dir 
-            )
-
-        self.UDP_Sim_Frame_transform = SimulationTransform(
-        offsets=self.simulation_origo_offset,
-        join_type='' #'merge' merges frames on unix time, else concatenates
-        )
-
         self.headers_path = os.path.join(self.abs_path, './DataFrames/headers')
         self.save_headers = (True, self.headers_path)
         self.df_path = os.path.join(self.abs_path, './DataFrames')
@@ -122,15 +109,12 @@ class DataModel:
                 save_headers=self.save_headers,
                 save_dataframes=self.save_dataframes,
                 df_aliases=self.df_aliases,
-                overwrite_headers=self.overwrite_headers,
-                frame_transform=self.UDP_Sim_Frame_transform,
+                overwrite_headers=self.overwrite_headers, 
                 verbose=self.dl_verbose
                 )
             
         #Initialize Simulation Manager
-        self.local_address = (socket.gethostname(), 5000) 
-        self.sc_buffer_sz = 1024
-        self.distance_filter = 1
+        self.distance_filter = 1 #geodetic degree
 
         #dummy_gunnerus is now the origin for 4dof sim
         self.dummy_gunnerus = {
@@ -158,12 +142,9 @@ class DataModel:
         self.run4DOFSim = True
 
         self.SimulationManager = SimulationManager(
-            local_address= self.local_address,
-            sc_buffer_sz = self.sc_buffer_sz,
             UDP_Stream = self.UDP_Stream,
             UDP_DataLogger = self.UDP_DataLogger,
-            websocket = self.websocket,
-            UDP_Sim_Frame_transform = self.UDP_Sim_Frame_transform,
+            websocket = self.websocket, 
             distance_filter = self.distance_filter,
             Colav_Manager = self.Colav_Manager,
             rvg_init = self.dummy_gunnerus, 
@@ -185,21 +166,18 @@ class DataModel:
         self.thread_websocket_receive = Thread(target=self.websocket.start) 
         self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 
         self.thread_log_data = Thread(target=self.UDP_DataLogger.start)
-        self.thread_sim_manager = Thread(target=self.SimulationManager.start) 
-        # self.thread_colav_manager = Thread(target=self.Colav_Manager.start)
+        self.thread_sim_manager = Thread(target=self.SimulationManager.start)  
 
     def start(self):
         if self.websocket.enable:
             self.thread_websocket_receive.start()
         self.thread_udp_stream.start()
         self.thread_log_data.start()
-        self.thread_sim_manager.start()
-        # self.thread_colav_manager.start() 
+        self.thread_sim_manager.start() 
 
     def stop(self): 
         self.UDP_Stream.stop()
         self.UDP_DataLogger.stop() 
-        self.SimulationManager.stop()
-        # self.Colav_Manager.stop()
+        self.SimulationManager.stop() 
         self.websocket.close()
         print('Exiting...') 

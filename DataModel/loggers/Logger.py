@@ -7,7 +7,7 @@ class SortedData(object):
         return getattr(self, item)
 
 class Logger:
-    def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, frame_transform=None, verbose=False):
+    def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, verbose=False):
         
         #attribute aliases for incoming messages
         self.df_aliases = df_aliases
@@ -26,9 +26,7 @@ class Logger:
         self._overwrite_headers = overwrite_headers
         self._log_verbose = verbose[0]
         self._buffer_verbose = verbose[1]
-        self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name')
-        self._frame_transform = frame_transform
-        self.simulation_data_name = "simulation_frame"
+        self.metadata_atr_names = ('unix_time', 'seq_num', 'src_id', 'src_name') 
 
         if not self._overwrite_headers:
             self._load_headers()

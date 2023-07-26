@@ -9,34 +9,26 @@ from colav.ColavManager import ColavManager
 import math
 
 class SimulationServer:
-    def __init__(self, buffer_size, data_logger = FastLogger, address= None,
-                websocket = DashboardWebsocket, transform=SimulationTransform(), 
-                distance_filter=None, predicted_interval = 30 ,colav_manager = ColavManager,
-                filt_order = 3, filt_cutfreq = 0.1, filt_nyqfreq = 0.5):
+    def __init__(self, data_logger = FastLogger, websocket = DashboardWebsocket, 
+                distance_filter=None, predicted_interval = 30 ,
+                colav_manager = ColavManager, filt_order = 3, filt_cutfreq = 0.1, 
+                filt_nyqfreq = 0.5):
         
         self._data_logger = data_logger
         self._buffer = data_logger.sorted_data
         self._running = False 
-        self.address = address
-        self.transform = transform
+        self.transform = SimulationTransform()
         self.ais_history = dict()
         self.ais_history_len = 30
         self.distance_filter = distance_filter
         self.gunnerus_lat=None
         self.gunnerus_lon=None
-        self._unity_filter = 0.1
         self.websocket = websocket
         self._colav_manager = colav_manager
         self._predicted_interval = predicted_interval 
         self._butter_b, self._butter_a = butter(filt_order, filt_cutfreq/filt_nyqfreq, btype='low')
         self.rvg_state = {}
         self.rvg_heading = None
-
-        if address is not None:
-            self._ip = address[0]
-            self._port = address[1]
-            self.buffer_size = buffer_size
-            self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
     def clear_ais_history(self):
         self.ais_history.clear()
@@ -93,37 +85,6 @@ class SimulationServer:
         data = np.array(data)
         filtered_data = filtfilt(self._butter_b, self._butter_a, data)
         return filtered_data
-
-    def replace_outliers(self, outliers, array, diff_mean): 
-        if np.size(outliers) == 0: return array
-
-        for index in np.nditer(outliers):
-            if index == np.size(array)-1:
-                array[index] = array[index - 1] + diff_mean 
-            else:
-                array[index] = array[index + 1] - diff_mean
-        return array
-
-    def _filter_outliers(self, next = (0,0), hist=[], m=2):
-        if len(hist) > 0.5*self.ais_history_len: 
-            t_arr = np.array(hist)
-            t1 = t_arr[:,0]
-            t2 = t_arr[:,1]
-            t1_diff = np.diff(t1)
-            t2_diff = np.diff(t2)
-            m_t1_diff = np.mean(t1_diff)
-            m_t2_diff = np.mean(t2_diff)
-            m1 = np.mean(t1)
-            m2 = np.mean(t2)
-            sdev1 = np.std(t1)
-            sdev2 = np.std(t2)
-            a = np.where((t1-m1) > 1.5 * sdev1)
-            b = np.where((t2-m2) > 1.5 * sdev2)
-            r_arr = self.replace_outliers(a, t1, m_t1_diff)
-            r_arr2 = self.replace_outliers(b, t2, m_t2_diff)
-            filtered = np.stack((r_arr, r_arr2)).T.tolist() 
-            return filtered
-        else: return hist
 
     def _set_history(self,msg):
         if (msg["message_id"].find("!AI") == 0):
@@ -189,26 +150,6 @@ class SimulationServer:
             "type": msg_type,
             "content": msg
             },default=str))
-    
-    def _compose_transformed_msg(self, msg):
-        northings = self.transform.deg_2_dec(float(msg["lat"]), msg["lat_dir"])
-        eastings = self.transform.deg_2_dec(float(msg["lon"]), msg["lon_dir"])
-        altitude = msg["altitude"] 
-        x,y,z = self.transform.get_xyz(northings, eastings, altitude)
-        return({"message_id":"coords","x":x, "y":y, "z":z})
-    
-    def _compose_ais_msg(self, msg): 
-            northings = float(msg["lat"])
-            eastings = float(msg["lon"])
-            altitude = 0
-            mmsi = msg["mmsi"]
-            heading = 0
-
-            if ("heading" in msg.keys()):
-                heading = msg["heading"]
-
-            x,y,z = self.transform.get_xyz(northings, eastings, altitude)
-            return({"message_id": "ais","x":x, "y":y, "mmsi":mmsi, "heading": heading}) 
 
     def _set_gunnerus_coords(self, msg): 
         self.gunnerus_lon = self.transform.deg_2_dec(float(msg["lon"]), msg["lon_dir"])
@@ -227,37 +168,17 @@ class SimulationServer:
                 self._has_data(message)
                 )
             
-            if self.address is not None:
+            if valid_ais_msg:
+                self._colav_manager.update_ais_data(message)
 
-                if valid_ais_msg:
-                    self._colav_manager.update_ais_data(message)
-
-                    if self._validate_coords(message, self._unity_filter):
-                        msg = self._compose_ais_msg(message)  
-                        json_msg = json.dumps({
-                                            "type": "datain",
-                                            "content": msg
-                                            },default=str)
-                        self.websocket.send(json_msg) 
-
-                if message["message_id"]=="$GPGGA_ext":
-                    self._set_gunnerus_coords(message)
-                    msg = self._compose_transformed_msg(message)
-                    json_msg = json.dumps({
-                                            "type": "datain",
-                                            "content": msg
-                                            },default=str)
-                    self.websocket.send(json_msg) 
-
-                if message["message_id"]=="$PSIMSNS_ext":
-                    self.rvg_heading = message['head_deg']
-                    
-
-                if message["message_id"]=="$GPRMC_ext": 
-                    self._colav_manager.update_gunnerus_data(message)
-                    self.rvg_state = message 
-                    pass
-
+            if message["message_id"]=="$PSIMSNS_ext":
+                self.rvg_heading = message['head_deg']
+                
+            if message["message_id"]=="$GPRMC_ext": 
+                self._set_gunnerus_coords(message)
+                self._colav_manager.update_gunnerus_data(message)
+                self.rvg_state = message 
+                pass
                 
     def pop_buffer(self, index = None):
         if len(self._buffer) < 1: return

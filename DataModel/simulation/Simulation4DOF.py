@@ -6,24 +6,23 @@ from datetime import datetime
 import numpy as np
 import json
 from time import time
-from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
-
-from simulation.SimulationTransform import SimulationTransform
+from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model 
 from utils.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager 
 from loggers.FastLogger import FastLogger 
 from simulation.SimulationServer import SimulationServer
 
 class Simulation4DOF(SimulationServer):
-    def __init__(self, buffer_size, address= None,
-                websocket = DashboardWebsocket, transform=SimulationTransform(), data_logger = FastLogger,
-                distance_filter=None, predicted_interval = 30 ,colav_manager = ColavManager,
-                filt_order = 3, filt_cutfreq = 0.1, filt_nyqfreq = 0.5, tmax = 1, dt=0.1, rvg_init={},
-                send_msg_filter = ['!AI']):
+    def __init__(self, websocket = DashboardWebsocket,
+                data_logger = FastLogger, distance_filter=None, predicted_interval = 30 ,
+                colav_manager = ColavManager, filt_order = 3, filt_cutfreq = 0.1, 
+                filt_nyqfreq = 0.5, tmax = 1, dt=0.1, rvg_init={}, send_msg_filter = ['!AI']):
         
-        super(Simulation4DOF, self).__init__(buffer_size, data_logger, address,
-                websocket, transform, distance_filter, predicted_interval ,colav_manager,
-                filt_order, filt_cutfreq, filt_nyqfreq)  
+        super(Simulation4DOF, self).__init__(data_logger, websocket, 
+                                            distance_filter, predicted_interval 
+                                            ,colav_manager, filt_order, filt_cutfreq, 
+                                            filt_nyqfreq)  
+        
         self._send_msg_filter = send_msg_filter
         self._running = False   
         self.ais_history = dict()
