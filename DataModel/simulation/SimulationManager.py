@@ -5,12 +5,12 @@ from simulation.SimulationTransform import SimulationTransform
 from threading import Thread
 
 class SimulationManager():
-    def __init__(self, UDP_Stream, UDP_DataLogger, websocket,
+    def __init__(self, datastream_manager, serializer, websocket,
                 distance_filter, Colav_Manager, rvg_init, tmax = 1, dt = 0.2,
                 predicted_interval = 60, mode = '4dof'):
         
-        self.UDP_Stream = UDP_Stream
-        self.UDP_DataLogger = UDP_DataLogger
+        self.datastream_manager = datastream_manager
+        self.serializer = serializer
         self.websocket = websocket 
         self.distance_filter = distance_filter
         self.Colav_Manager = Colav_Manager 
@@ -74,8 +74,8 @@ class SimulationManager():
     def set_simulation_type(self, mode):
         if (mode == self.mode_replay): 
                 self.SimulationServer = SimulationServerReplay(
-                    logParser=self.UDP_Stream,
-                    data_logger=self.UDP_DataLogger,
+                    log_datastream_manager=self.datastream_manager,
+                    serializer=self.serializer,
                     websocket=self.websocket, 
                     distance_filter=self.distance_filter,
                     predicted_interval=self.predicted_interval,
@@ -84,7 +84,7 @@ class SimulationManager():
         elif (mode == self.mode_4dof): 
             self.SimulationServer = Simulation4DOF(
                 websocket =self.websocket,
-                data_logger=self.UDP_DataLogger,  
+                serializer=self.serializer,  
                 distance_filter=self.distance_filter, 
                 colav_manager=self.Colav_Manager, 
                 tmax = self.tmax, 
@@ -93,7 +93,7 @@ class SimulationManager():
                 )
         else:  
             self.SimulationServer = SimulationServer(
-                data_logger=self.UDP_DataLogger,
+                serializer=self.serializer,
                 websocket=self.websocket, 
                 distance_filter=self.distance_filter,
                 predicted_interval=self.predicted_interval,

@@ -1,16 +1,14 @@
 from threading import Thread
 from datastream_managers.TcpDatastreamManager import TcpDatastreamManager
 from datastream_managers.LogDatastreamManager import LogDatastreamManager
-from serializers.FastSerializer import FastSerializer     
-from simulation.SimulationTransform import SimulationTransform
+from serializers.FastSerializer import FastSerializer  
 from colav.ColavManager import ColavManager
 from simulation.SimulationManager import SimulationManager
 import pathlib
 from data_relay.DashboardWebsocket import DashboardWebsocket
 from datetime import datetime
 import os
-from datastream_managers.Decrypter import Decrypter
-import socket
+from datastream_managers.Decrypter import Decrypter 
 import easygui
 
 class DataModel:
@@ -38,48 +36,47 @@ class DataModel:
         self.log_stream = (self.log_path, self.log_time, self.save_logs)
         self.Colav_Manager = colav_manager
         self.key_path = os.path.join(self.abs_path, 'key')
-        self.UDP_Decrypter = Decrypter(key_path = self.key_path)
+        self.Datastream_Decrypter = Decrypter(key_path = self.key_path)
         self.websocket = websocket
         # if True a log can be selected and used as the data source
-        self.parse_saved_log = False 
+        self.stream_saved_log = False 
         self.drop_ais_message = False
 
         # automatically true if using a log file as an arg
         if self.log_file is not None:
-            self.parse_saved_log = True 
+            self.stream_saved_log = True 
             self.load_path = self.log_file
         
         # filter for messages: mesages not including these strings are dropped
         self.prefixFilter = ['$PSIMSNS', '!AI', '$GPGGA', '$GPRMC']
         self.suffixFilter = '_ext'
 
-        #Select and initialize parser
-        if self.parse_saved_log:
+        #Select and initialize DatastreamManager
+        if self.stream_saved_log:
             if self.log_file is None:
                 self.load_path = easygui.fileopenbox()
 
-            self.UDP_Stream = LogDatastreamManager(
+            self.Datastream_Manager = LogDatastreamManager(
                 path = self.load_path,
                 verbosity=self.verbosity, 
-                decrypter=self.UDP_Decrypter,
+                decrypter=self.Datastream_Decrypter,
                 drop_ais_messages=self.drop_ais_message,
                 prefixFilter=self.prefixFilter,
                 suffixFilter=self.suffixFilter)
         else:
-            self.UDP_Stream = TcpDatastreamManager(
+            self.Datastream_Manager = TcpDatastreamManager(
                 address=self.address,
                 buffer_size=self.buffer_size,
                 verbosity=self.verbosity,
                 log_stream=self.log_stream,
-                decrypter=self.UDP_Decrypter,
+                decrypter=self.Datastream_Decrypter,
                 drop_ais_messages=self.drop_ais_message,
                 prefixFilter=self.prefixFilter,
                 suffixFilter=self.suffixFilter)
             
-        #Initialize Data Logger
+        #Initialize Serializer
         self.headers_path = os.path.join(self.abs_path, './serializers/headers')
-        self.save_headers = (True, self.headers_path)
-        self.df_path = os.path.join(self.abs_path, './DataFrames')
+        self.save_headers = (True, self.headers_path) 
 
         # ToDo: create class for holding these tuples
         self.df_aliases = {
@@ -87,19 +84,16 @@ class DataModel:
             '$PSIMSNS_ext': ['msg_type', 'timestamp', 'unknown_1', 'tcvr_num', 'tdcr_num', 'roll_deg', 'pitch_deg', 'heave_m', 'head_deg', 'empty_1', 'unknown_2', 'unknown_3', 'empty_2', 'checksum'],
         }
 
-        self.save_dataframes = (False, self.df_path)
         self.overwrite_headers = True
         self.dl_verbose = (False, False) 
 
-
-        self.UDP_DataLogger = FastSerializer(
-            stream_parser=self.UDP_Stream,
+        self.Serializer = FastSerializer(
+            datastream_manager=self.Datastream_Manager,
             save_headers=self.save_headers,
             df_aliases=self.df_aliases,
             overwrite_headers=self.overwrite_headers,
             verbose=self.dl_verbose
             )
-        
             
         #Initialize Simulation Manager
         self.distance_filter = 1 #geodetic degree
@@ -127,11 +121,11 @@ class DataModel:
             'pos_history': [[10.482652, 63.473148]],
             }
         
-        self.run4DOFSim = True
+        self.run_4DOF_sim = True
 
         self.SimulationManager = SimulationManager(
-            UDP_Stream = self.UDP_Stream,
-            UDP_DataLogger = self.UDP_DataLogger,
+            datastream_manager = self.Datastream_Manager,
+            serializer = self.Serializer,
             websocket = self.websocket, 
             distance_filter = self.distance_filter,
             Colav_Manager = self.Colav_Manager,
@@ -143,29 +137,29 @@ class DataModel:
             )
 
         # Select 'Simulation' source: saved log, 4dof, or rt
-        if (self.parse_saved_log): 
+        if (self.stream_saved_log): 
             self.SimulationManager.set_simulation_type(self.SimulationManager.mode_replay)            
-        elif (self.run4DOFSim): 
+        elif (self.run_4DOF_sim): 
             self.SimulationManager.set_simulation_type(self.SimulationManager.mode_4dof)
         else:  
             self.SimulationManager.set_simulation_type(self.SimulationManager.mode_rt)
         
         # Create new threads
         self.thread_websocket_receive = Thread(target=self.websocket.start) 
-        self.thread_udp_stream = Thread(target=self.UDP_Stream.start) 
-        self.thread_log_data = Thread(target=self.UDP_DataLogger.start)
+        self.thread_datastream = Thread(target=self.Datastream_Manager.start) 
+        self.thread_serialize_data = Thread(target=self.Serializer.start)
         self.thread_sim_manager = Thread(target=self.SimulationManager.start)  
 
     def start(self):
         if self.websocket.enable:
             self.thread_websocket_receive.start()
-        self.thread_udp_stream.start()
-        self.thread_log_data.start()
+        self.thread_datastream.start()
+        self.thread_serialize_data.start()
         self.thread_sim_manager.start() 
 
     def stop(self): 
-        self.UDP_Stream.stop()
-        self.UDP_DataLogger.stop() 
+        self.Datastream_Manager.stop()
+        self.Serializer.stop() 
         self.SimulationManager.stop() 
         self.websocket.close()
         print('Exiting...') 

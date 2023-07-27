@@ -9,13 +9,13 @@ from colav.ColavManager import ColavManager
 import math
 
 class SimulationServer:
-    def __init__(self, data_logger = FastSerializer, websocket = DashboardWebsocket, 
+    def __init__(self, serializer = FastSerializer, websocket = DashboardWebsocket, 
                 distance_filter=None, predicted_interval = 30 ,
                 colav_manager = ColavManager, filt_order = 3, filt_cutfreq = 0.1, 
                 filt_nyqfreq = 0.5):
         
-        self._data_logger = data_logger
-        self._buffer = data_logger.sorted_data
+        self._serializer = serializer
+        self._buffer = serializer.sorted_data
         self._running = False 
         self.transform = SimulationTransform()
         self.ais_history = dict()

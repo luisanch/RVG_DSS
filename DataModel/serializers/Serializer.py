@@ -7,7 +7,7 @@ class SortedData(object):
         return getattr(self, item)
 
 class Serializer:
-    def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, verbose=False):
+    def __init__(self, datastream_manager, save_headers, save_dataframes, df_aliases, overwrite_headers=False, verbose=False):
         
         #attribute aliases for incoming messages
         self.df_aliases = df_aliases
@@ -15,14 +15,14 @@ class Serializer:
         # define name for unknown atribute
         self.def_unk_atr_name = 'unknown_'
 
-        self._stream_parser = stream_parser
+        self._datastream_manager = datastream_manager
         self.sorted_data = SortedData()
         self._running = False
         self._save_headers = save_headers[0]
         self._headers_path = save_headers[1]
         self._save_df = save_dataframes[0]
         self._dataframes_path = save_dataframes[1]         
-        self._buffer_data = stream_parser.parsed_msg_list
+        self._buffer_data = datastream_manager.parsed_msg_list
         self._overwrite_headers = overwrite_headers
         self._log_verbose = verbose[0]
         self._buffer_verbose = verbose[1]

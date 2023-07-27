@@ -14,11 +14,11 @@ from simulation.SimulationServer import SimulationServer
 
 class Simulation4DOF(SimulationServer):
     def __init__(self, websocket = DashboardWebsocket,
-                data_logger = FastSerializer, distance_filter=None, predicted_interval = 30 ,
+                serializer = FastSerializer, distance_filter=None, predicted_interval = 30 ,
                 colav_manager = ColavManager, filt_order = 3, filt_cutfreq = 0.1, 
                 filt_nyqfreq = 0.5, tmax = 1, dt=0.1, rvg_init={}, send_msg_filter = ['!AI']):
         
-        super(Simulation4DOF, self).__init__(data_logger, websocket, 
+        super(Simulation4DOF, self).__init__(serializer, websocket, 
                                             distance_filter, predicted_interval 
                                             ,colav_manager, filt_order, filt_cutfreq, 
                                             filt_nyqfreq)  
@@ -173,7 +173,7 @@ class Simulation4DOF(SimulationServer):
                 x = model.int_RVGMan4(x, u, Fw, self.parV, self.parA, parS) 
             except :
                 pass
-            
+
         timestamps = tvec + simulationStart
         #sort output 
         out=x_out[0:6,:]

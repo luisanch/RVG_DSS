@@ -2,7 +2,7 @@ from serializers.Serializer import Serializer
 from datastream_managers.DatastreamManager import DatastreamManager
 
 class FastSerializer(Serializer):
-    def __init__(self, save_headers, df_aliases, stream_parser = DatastreamManager,
+    def __init__(self, save_headers, df_aliases, datastream_manager = DatastreamManager,
                 overwrite_headers=False, verbose=False):
         
         #attribute aliases for incoming messages
@@ -11,12 +11,12 @@ class FastSerializer(Serializer):
         # define name for unknown atribute
         self.def_unk_atr_name = 'unknown_'
         self.bufferBusy = False
-        self._stream_parser = stream_parser
+        self._datstream_manager = datastream_manager
         self.sorted_data = []
         self._running = False
         self._save_headers = save_headers[0]
         self._headers_path = save_headers[1]     
-        self._buffer_data = stream_parser.parsed_msg_list
+        self._buffer_data = datastream_manager.parsed_msg_list
         self._overwrite_headers = overwrite_headers
         self._log_verbose = verbose[0]
         self._buffer_verbose = verbose[1]
@@ -25,7 +25,7 @@ class FastSerializer(Serializer):
         if not self._overwrite_headers:
             self._load_headers()
     
-    def _log_data(self, message):
+    def _serialize_data(self, message):
             msg_id, msg_atr, msg_values, unkown_msg_data, metadata = message
 
             # ToDo: Probably very inefficient
@@ -53,7 +53,7 @@ class FastSerializer(Serializer):
             self.sorted_data.append(message) 
             return 
 
-    def _log_buffered_message(self):
+    def _serialize_buffered_message(self):
         if len(self._buffer_data) < 1: 
             self.bufferBusy = False
             if self._buffer_verbose:  print('Buffer Empty')
@@ -76,14 +76,14 @@ class FastSerializer(Serializer):
 
         message = (msg_id, msg_atr, msg_values, unkown_msg_data, metadata)
         
-        self._log_data(message)
-        self._stream_parser.pop_parsed_msg_list() 
+        self._serialize_data(message)
+        self._datstream_manager.pop_parsed_msg_list() 
 
     def start(self):
         self._running = True
         print('FastSerializer running.')
 
         while self._running: 
-            self._log_buffered_message()  
+            self._serialize_buffered_message()  
         # ToDo: handle loose ends on terminating process. 
         print('FastSerializer stopped.')

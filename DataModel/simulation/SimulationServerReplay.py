@@ -11,14 +11,14 @@ import math
 from time import time
 
 class SimulationServerReplay(SimulationServer):
-    def __init__(self, data_logger = FastSerializer, logParser = LogDatastreamManager,
+    def __init__(self, serializer = FastSerializer, log_datastream_manager = LogDatastreamManager,
                 websocket = DashboardWebsocket, 
                 distance_filter=None, predicted_interval = 30 ,colav_manager = ColavManager,
                 filt_order = 3, filt_cutfreq = 0.1, filt_nyqfreq = 0.5):
-        super(SimulationServerReplay, self).__init__( data_logger,
+        super(SimulationServerReplay, self).__init__( serializer,
                 websocket, distance_filter, predicted_interval ,colav_manager,
                 filt_order, filt_cutfreq, filt_nyqfreq)
-        self.logParser = logParser
+        self._log_datastream_manager = log_datastream_manager
         
     def start(self):
         self._running = True 
@@ -28,7 +28,7 @@ class SimulationServerReplay(SimulationServer):
         time_of_first_message = 0
         start_time = 0
         while self._running:
-            if (self.logParser.parse_complete and not self._data_logger.bufferBusy): 
+            if (self._log_datastream_manager.parse_complete and not self._serializer.bufferBusy): 
                 if sortedList is None: 
                     sortedList = sorted(self._buffer, key=lambda d: d['seq_num'])  
                     time_of_first_message = sortedList[index]['unix_time']
