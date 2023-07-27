@@ -3,13 +3,13 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 import json
 from simulation.SimulationTransform import SimulationTransform
-from loggers.FastLogger import FastLogger 
+from serializers.FastSerializer import FastSerializer 
 from data_relay.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager
 import math
 
 class SimulationServer:
-    def __init__(self, data_logger = FastLogger, websocket = DashboardWebsocket, 
+    def __init__(self, data_logger = FastSerializer, websocket = DashboardWebsocket, 
                 distance_filter=None, predicted_interval = 30 ,
                 colav_manager = ColavManager, filt_order = 3, filt_cutfreq = 0.1, 
                 filt_nyqfreq = 0.5):

@@ -9,12 +9,12 @@ from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model 
 from data_relay.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager 
-from loggers.FastLogger import FastLogger 
+from serializers.FastSerializer import FastSerializer 
 from simulation.SimulationServer import SimulationServer
 
 class Simulation4DOF(SimulationServer):
     def __init__(self, websocket = DashboardWebsocket,
-                data_logger = FastLogger, distance_filter=None, predicted_interval = 30 ,
+                data_logger = FastSerializer, distance_filter=None, predicted_interval = 30 ,
                 colav_manager = ColavManager, filt_order = 3, filt_cutfreq = 0.1, 
                 filt_nyqfreq = 0.5, tmax = 1, dt=0.1, rvg_init={}, send_msg_filter = ['!AI']):
         
@@ -160,14 +160,20 @@ class Simulation4DOF(SimulationServer):
         thrust_state = np.array([azi,self.revs]) #azimuth angle and revs 
         x=np.concatenate((self.eta, self.nu, thrust_state)) 
         x_out=np.zeros([len(x),len(tvec)])
-        simulationStart = time() 
+        simulationStart = time()  
         for i1, t in enumerate(tvec):
             #store results 
             x_out[:,i1] = x 
             u = thrust_state
             #time integration
             Fw = np.zeros(4)  
-            x = model.int_RVGMan4(x, u, Fw, self.parV, self.parA, parS) 
+
+            #ToDo: sometimes it hiccups here, figure out why
+            try:
+                x = model.int_RVGMan4(x, u, Fw, self.parV, self.parA, parS) 
+            except :
+                pass
+            
         timestamps = tvec + simulationStart
         #sort output 
         out=x_out[0:6,:]

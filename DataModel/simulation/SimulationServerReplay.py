@@ -3,7 +3,7 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 import json
 from datastream_managers.LogDatastreamManager import LogDatastreamManager
-from loggers.FastLogger import FastLogger 
+from serializers.FastSerializer import FastSerializer 
 from simulation.SimulationServer import SimulationServer 
 from data_relay.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager
@@ -11,7 +11,7 @@ import math
 from time import time
 
 class SimulationServerReplay(SimulationServer):
-    def __init__(self, data_logger = FastLogger, logParser = LogDatastreamManager,
+    def __init__(self, data_logger = FastSerializer, logParser = LogDatastreamManager,
                 websocket = DashboardWebsocket, 
                 distance_filter=None, predicted_interval = 30 ,colav_manager = ColavManager,
                 filt_order = 3, filt_cutfreq = 0.1, filt_nyqfreq = 0.5):

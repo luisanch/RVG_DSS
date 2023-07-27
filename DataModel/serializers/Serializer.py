@@ -6,7 +6,7 @@ class SortedData(object):
     def __getitem__(self, item):
         return getattr(self, item)
 
-class Logger:
+class Serializer:
     def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, verbose=False):
         
         #attribute aliases for incoming messages
@@ -77,7 +77,8 @@ class Logger:
 
     def stop(self):
         self._running = False
+        print('Serializer stopped.')
 
     def start(self):
         self._running = True
-        print('DataLogger running.')
+        print('Serializer running.')

@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
-from os.path import isfile, join
-from loggers.Logger import Logger
+from os.path import join
+from serializers.Serializer import Serializer
 
 class SortedData(object):    
     def __getitem__(self, item):
         return getattr(self, item)
 
-class DataLogger(Logger):
+class FrameSerializer(Serializer):
     def __init__(self, stream_parser, save_headers, save_dataframes, df_aliases, overwrite_headers=False, verbose=False):
         
         #attribute aliases for incoming messages
@@ -122,7 +122,7 @@ class DataLogger(Logger):
         msg_id = self._buffer_data[-1][0]
         msg_atr, msg_values, unkown_msg_data = self._get_nmea_attributes(nmea_message)  
 
-        if len(self._buffer_data[-1]) is 3:
+        if len(self._buffer_data[-1]) == 3:
             metadata = self._buffer_data[-1][2]
         else:
             metadata = None
@@ -150,10 +150,10 @@ class DataLogger(Logger):
 
     def start(self):
         self._running = True
-        print('DataLogger running.')
+        print('FrameSerializer running.')
 
         while self._running: 
             self._log_buffered_message()
         self._save_dataframes()
         # ToDo: handle loose ends on terminating process.
-        print('DataLogger stopped.')
+        print('FrameSerializer stopped.')

@@ -1,8 +1,8 @@
 from threading import Thread
 from datastream_managers.TcpDatastreamManager import TcpDatastreamManager
 from datastream_managers.LogDatastreamManager import LogDatastreamManager
-from loggers.FastLogger import FastLogger
-from loggers.DataLogger import DataLogger   
+from serializers.FastSerializer import FastSerializer
+from serializers.FrameSerializer import FrameSerializer   
 from simulation.SimulationTransform import SimulationTransform
 from colav.ColavManager import ColavManager
 from simulation.SimulationManager import SimulationManager
@@ -78,7 +78,7 @@ class DataModel:
                 suffixFilter=self.suffixFilter)
             
         #Initialize Data Logger
-        self.headers_path = os.path.join(self.abs_path, './DataFrames/headers')
+        self.headers_path = os.path.join(self.abs_path, './serializers/headers')
         self.save_headers = (True, self.headers_path)
         self.df_path = os.path.join(self.abs_path, './DataFrames')
 
@@ -96,7 +96,7 @@ class DataModel:
 
         #These should be two separate, concurrent, components.
         if (not self.saveIncomingData):
-            self.UDP_DataLogger = FastLogger(
+            self.UDP_DataLogger = FastSerializer(
                 stream_parser=self.UDP_Stream,
                 save_headers=self.save_headers,
                 df_aliases=self.df_aliases,
@@ -104,7 +104,7 @@ class DataModel:
                 verbose=self.dl_verbose
                 )
         else:
-            self.UDP_DataLogger = DataLogger(
+            self.UDP_DataLogger = FrameSerializer(
                 stream_parser=self.UDP_Stream,
                 save_headers=self.save_headers,
                 save_dataframes=self.save_dataframes,

@@ -1,8 +1,7 @@
-import pandas as pd
-from loggers.Logger import Logger 
+from serializers.Serializer import Serializer 
 from datastream_managers.DatastreamManager import DatastreamManager
 
-class FastLogger(Logger):
+class FastSerializer(Serializer):
     def __init__(self, save_headers, df_aliases, stream_parser = DatastreamManager,
                 overwrite_headers=False, verbose=False):
         
@@ -82,9 +81,9 @@ class FastLogger(Logger):
 
     def start(self):
         self._running = True
-        print('DataLogger running.')
+        print('FastSerializer running.')
 
         while self._running: 
             self._log_buffered_message()  
         # ToDo: handle loose ends on terminating process. 
-        print('DataLogger stopped.')
+        print('FastSerializer stopped.')
