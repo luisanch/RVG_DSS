@@ -5,7 +5,7 @@ import pynmea2
 from pyais import decode as ais_decode
 import select
 import os
-from datastream_managers.Decrypter import Decrypter
+from rvg_dss.datastream_managers.Decrypter import Decrypter
 
 class DatastreamManager:
     def __init__(self, loop_limit = 1, 

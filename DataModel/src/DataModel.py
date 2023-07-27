@@ -1,15 +1,16 @@
 from threading import Thread
-from datastream_managers.TcpDatastreamManager import TcpDatastreamManager
-from datastream_managers.LogDatastreamManager import LogDatastreamManager
-from serializers.FastSerializer import FastSerializer  
-from colav.ColavManager import ColavManager
-from simulation.SimulationManager import SimulationManager
 import pathlib
-from data_relay.DashboardWebsocket import DashboardWebsocket
-from datetime import datetime
 import os
-from datastream_managers.Decrypter import Decrypter 
+from datetime import datetime
 import easygui
+from rvg_dss.datastream_managers.TcpDatastreamManager import TcpDatastreamManager
+from rvg_dss.datastream_managers.LogDatastreamManager import LogDatastreamManager
+from rvg_dss.serializers.FastSerializer import FastSerializer  
+from rvg_dss.colav.ColavManager import ColavManager
+from rvg_dss.simulation.SimulationManager import SimulationManager
+from rvg_dss.data_relay.DashboardWebsocket import DashboardWebsocket
+from rvg_dss.datastream_managers.Decrypter import Decrypter 
+
 
 class DataModel:
     def __init__(self, colav_manager = ColavManager, websocket = DashboardWebsocket ,log_file=None):
@@ -35,7 +36,7 @@ class DataModel:
         self.log_path = os.path.join(self.abs_path, 'DataStreams', self.log_name)
         self.log_stream = (self.log_path, self.log_time, self.save_logs)
         self.Colav_Manager = colav_manager
-        self.key_path = os.path.join(self.abs_path, 'key')
+        self.key_path = os.path.join(self.abs_path, 'rvg_dss', 'key')
         self.Datastream_Decrypter = Decrypter(key_path = self.key_path)
         self.websocket = websocket
         # if True a log can be selected and used as the data source

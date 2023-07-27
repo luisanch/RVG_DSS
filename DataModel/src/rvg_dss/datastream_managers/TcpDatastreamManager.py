@@ -3,8 +3,8 @@ import time
 import sys
 import select
 import os
-from datastream_managers.Decrypter import Decrypter
-from datastream_managers.DatastreamManager import DatastreamManager
+from rvg_dss.datastream_managers.Decrypter import Decrypter
+from rvg_dss.datastream_managers.DatastreamManager import DatastreamManager
 
 class TcpDatastreamManager(DatastreamManager):
     def __init__(self, address, buffer_size, loop_limit = 1, 

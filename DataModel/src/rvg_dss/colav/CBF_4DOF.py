@@ -4,8 +4,8 @@ from pathlib import Path
 import sys
 import numpy as np 
 import copy 
-from simulation.SimulationTransform import SimulationTransform 
-from colav.CBF import CBF
+from rvg_dss.simulation.SimulationTransform import SimulationTransform 
+from rvg_dss.colav.CBF import CBF
 
 from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model

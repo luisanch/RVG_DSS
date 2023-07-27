@@ -4,4 +4,5 @@ Server/node_modules/
 Server/build/
 DataModel/__pycache__/
 DataModel/*/__pycache__/ 
-.pyc
+DataModel/*/*/__pycache__/ 
+*.pyc

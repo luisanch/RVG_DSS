@@ -1,5 +1,5 @@
-from serializers.Serializer import Serializer 
-from datastream_managers.DatastreamManager import DatastreamManager
+from rvg_dss.serializers.Serializer import Serializer 
+from rvg_dss.datastream_managers.DatastreamManager import DatastreamManager
 
 class FastSerializer(Serializer):
     def __init__(self, save_headers, df_aliases, datastream_manager = DatastreamManager,
