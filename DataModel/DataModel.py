@@ -38,7 +38,7 @@ class DataModel:
         self.log_path = os.path.join(self.abs_path, 'DataStreams', self.log_name)
         self.log_stream = (self.log_path, self.log_time, self.save_logs)
         self.Colav_Manager = colav_manager
-        self.key_path = os.path.join(self.abs_path, 'nmeatools')
+        self.key_path = os.path.join(self.abs_path, 'key')
         self.UDP_Decrypter = Decrypter(key_path = self.key_path)
         self.websocket = websocket
         # if True a log can be selected and used as the data source
