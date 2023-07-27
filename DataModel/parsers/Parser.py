@@ -5,7 +5,7 @@ import pynmea2
 from pyais import decode as ais_decode
 import select
 import os
-from utils.Decrypter import Decrypter
+from parsers.Decrypter import Decrypter
 
 class Parser:
     def __init__(self, loop_limit = 1, 
@@ -182,7 +182,7 @@ class Parser:
         assert(decoded.find(self.talker[0]) == 0 or decoded.find(self.talker[1]) == 0) 
         if self.drop_ais_messages: return
         parsed_msg = self._assemble_ais(raw_msg)
-        if parsed_msg is '': return
+        if parsed_msg == '': return
         else:   
             self._save_individual_tags(raw_msg, self.parsed_msg_tags, "Succesfully Parsed", parsed_msg, self._tag_verbose)
             self._update_data_object(parsed_msg, raw_msg, 'AIS', self._parsed_message_verbose, metadata=metadata)

@@ -10,7 +10,7 @@ import pathlib
 from utils.DashboardWebsocket import DashboardWebsocket
 from datetime import datetime
 import os
-from utils.Decrypter import Decrypter
+from parsers.Decrypter import Decrypter
 import socket
 import easygui
 
