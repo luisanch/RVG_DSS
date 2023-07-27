@@ -3,10 +3,10 @@ import time
 import sys
 import select
 import os
-from parsers.Decrypter import Decrypter
-from parsers.Parser import Parser
+from datastream_managers.Decrypter import Decrypter
+from datastream_managers.DatastreamManager import DatastreamManager
 
-class StreamParser(Parser):
+class TcpDatastreamManager(DatastreamManager):
     def __init__(self, address, buffer_size, loop_limit = 1, 
                 verbosity = (False, False, False, False, False), 
                 log_stream = ("datstream_5min.txt", 300, False),
@@ -64,13 +64,13 @@ class StreamParser(Parser):
         self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
         self._s.connect(self._address)
 
-         # Variables for AIS Decoding
+        # Variables for AIS Decoding
         self.talker = ['!AIVDM', '!AIVDO']
         self.max_id = 10
         self._buffer = [None] * self.max_id
 
     def start(self):
-        print("StreamParser running.")
+        print("TcpDatastreamManager running.")
 
         self._running = True
 
@@ -103,4 +103,4 @@ class StreamParser(Parser):
                 print("writing done, closing file ", self.log_file_name )
                 f.close()
 
-        print("StreamParser Stopped.")           
+        print("TcpDatastreamManager Stopped.")           

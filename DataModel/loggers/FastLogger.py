@@ -1,9 +1,9 @@
 import pandas as pd
 from loggers.Logger import Logger 
-from parsers.Parser import Parser
+from datastream_managers.DatastreamManager import DatastreamManager
 
 class FastLogger(Logger):
-    def __init__(self, save_headers, df_aliases, stream_parser = Parser,
+    def __init__(self, save_headers, df_aliases, stream_parser = DatastreamManager,
                 overwrite_headers=False, verbose=False):
         
         #attribute aliases for incoming messages
@@ -70,7 +70,7 @@ class FastLogger(Logger):
         else:
             msg_atr, msg_values, unkown_msg_data = self._get_nmea_attributes(_message) 
         
-        if len(self._buffer_data[-1]) is 3:
+        if len(self._buffer_data[-1]) == 3:
             metadata = self._buffer_data[-1][2]
         else:
             metadata = None

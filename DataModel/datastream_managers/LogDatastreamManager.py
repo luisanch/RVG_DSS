@@ -2,11 +2,11 @@ import time
 import sys
 import select
 import os
-from parsers.Decrypter import Decrypter
-from parsers.Parser import Parser
+from datastream_managers.Decrypter import Decrypter
+from datastream_managers.DatastreamManager import DatastreamManager
 from tqdm import tqdm
 
-class LogParser(Parser):
+class LogDatastreamManager(DatastreamManager):
     def __init__(self, path ,loop_limit = 1, 
                 verbosity = (False, False, False, False, False), 
                 decrypter = Decrypter, drop_ais_messages = True,
@@ -53,13 +53,13 @@ class LogParser(Parser):
 
         self.path = path
 
-         # Variables for AIS Decoding
+        # Variables for AIS Decoding
         self.talker = ['!AIVDM', '!AIVDO']
         self.max_id = 10
         self._buffer = [None] * self.max_id
 
     def start(self):
-        print("StreamParser running.")
+        print("LogDatastreamManager running.")
         self._running = True
         file = open(self.path , 'r')
         lines = file.readlines()  
@@ -70,4 +70,4 @@ class LogParser(Parser):
             self._parse_message(raw_msg)  
         self.parse_complete = True
 
-        print("StreamParser Stopped.")           
+        print("LogDatastreamManager Stopped.")           

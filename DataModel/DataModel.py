@@ -1,6 +1,6 @@
 from threading import Thread
-from parsers.StreamParser import StreamParser
-from parsers.LogParser import LogParser
+from datastream_managers.TcpDatastreamManager import TcpDatastreamManager
+from datastream_managers.LogDatastreamManager import LogDatastreamManager
 from loggers.FastLogger import FastLogger
 from loggers.DataLogger import DataLogger   
 from simulation.SimulationTransform import SimulationTransform
@@ -10,7 +10,7 @@ import pathlib
 from utils.DashboardWebsocket import DashboardWebsocket
 from datetime import datetime
 import os
-from parsers.Decrypter import Decrypter
+from datastream_managers.Decrypter import Decrypter
 import socket
 import easygui
 
@@ -59,7 +59,7 @@ class DataModel:
             if self.log_file is None:
                 self.load_path = easygui.fileopenbox()
 
-            self.UDP_Stream = LogParser(
+            self.UDP_Stream = LogDatastreamManager(
                 path = self.load_path,
                 verbosity=self.verbosity, 
                 decrypter=self.UDP_Decrypter,
@@ -67,7 +67,7 @@ class DataModel:
                 prefixFilter=self.prefixFilter,
                 suffixFilter=self.suffixFilter)
         else:
-            self.UDP_Stream = StreamParser(
+            self.UDP_Stream = TcpDatastreamManager(
                 address=self.address,
                 buffer_size=self.buffer_size,
                 verbosity=self.verbosity,

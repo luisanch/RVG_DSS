@@ -5,9 +5,9 @@ import pynmea2
 from pyais import decode as ais_decode
 import select
 import os
-from parsers.Decrypter import Decrypter
+from datastream_managers.Decrypter import Decrypter
 
-class Parser:
+class DatastreamManager:
     def __init__(self, loop_limit = 1, 
                 verbosity = (False, False, False, False, False), 
                 log_stream = ("datstream_5min.txt", 300, False),
@@ -228,4 +228,4 @@ class Parser:
                                     print('Unable to parse or save message tag: {}'.format(raw_msg))
 
     def start(self):
-        print("StreamParser Stopped.")           
+        print("DatastreamManager Stopped.")           
