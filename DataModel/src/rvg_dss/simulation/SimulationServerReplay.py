@@ -1,5 +1,3 @@
-import numpy as np 
-from scipy.signal import butter, filtfilt 
 from rvg_dss.datastream_managers.LogDatastreamManager import LogDatastreamManager
 from rvg_dss.serializers.FastSerializer import FastSerializer 
 from rvg_dss.simulation.SimulationServer import SimulationServer 
