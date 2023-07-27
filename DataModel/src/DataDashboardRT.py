@@ -1,7 +1,7 @@
 from DataModel import DataModel
 from time import sleep, time
 import argparse 
-from multiprocessing import Process, get_context, Queue
+from multiprocessing import Process, get_context
 from rvg_dss.colav.ColavManager import ColavManager
 from rvg_dss.data_relay.DashboardWebsocket import DashboardWebsocket 
 

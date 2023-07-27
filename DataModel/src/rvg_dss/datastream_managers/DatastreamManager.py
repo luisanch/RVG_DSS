@@ -1,10 +1,6 @@
-import socket
-import time 
 import sys
 import pynmea2 
 from pyais import decode as ais_decode
-import select
-import os
 from rvg_dss.datastream_managers.Decrypter import Decrypter
 
 class DatastreamManager:
