@@ -4,7 +4,7 @@ from scipy.signal import butter, filtfilt
 import json
 from simulation.SimulationTransform import SimulationTransform
 from loggers.FastLogger import FastLogger 
-from utils.DashboardWebsocket import DashboardWebsocket
+from data_relay.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager
 import math
 

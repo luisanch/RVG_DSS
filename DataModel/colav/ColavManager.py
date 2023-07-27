@@ -1,4 +1,4 @@
-from utils.DashboardWebsocket import DashboardWebsocket
+from data_relay.DashboardWebsocket import DashboardWebsocket
 from simulation.SimulationTransform import SimulationTransform
 from colav.ARPA import ARPA
 from colav.CBF import CBF

@@ -7,7 +7,7 @@ import numpy as np
 import json
 from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model 
-from utils.DashboardWebsocket import DashboardWebsocket
+from data_relay.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager 
 from loggers.FastLogger import FastLogger 
 from simulation.SimulationServer import SimulationServer

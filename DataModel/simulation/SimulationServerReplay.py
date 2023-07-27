@@ -5,7 +5,7 @@ import json
 from datastream_managers.LogDatastreamManager import LogDatastreamManager
 from loggers.FastLogger import FastLogger 
 from simulation.SimulationServer import SimulationServer 
-from utils.DashboardWebsocket import DashboardWebsocket
+from data_relay.DashboardWebsocket import DashboardWebsocket
 from colav.ColavManager import ColavManager
 import math
 from time import time

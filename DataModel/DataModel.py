@@ -7,7 +7,7 @@ from simulation.SimulationTransform import SimulationTransform
 from colav.ColavManager import ColavManager
 from simulation.SimulationManager import SimulationManager
 import pathlib
-from utils.DashboardWebsocket import DashboardWebsocket
+from data_relay.DashboardWebsocket import DashboardWebsocket
 from datetime import datetime
 import os
 from datastream_managers.Decrypter import Decrypter
