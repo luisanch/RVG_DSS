@@ -3,10 +3,10 @@ from datetime import datetime
 import numpy as np
 from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model 
-from rvg_dss.data_relay.DashboardWebsocket import DashboardWebsocket
-from rvg_dss.colav.ColavManager import ColavManager 
-from rvg_dss.serializers.FastSerializer import FastSerializer 
-from rvg_dss.simulation.SimulationServer import SimulationServer
+from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket
+from rvg_leidarstein_core.colav.ColavManager import ColavManager 
+from rvg_leidarstein_core.serializers.FastSerializer import FastSerializer 
+from rvg_leidarstein_core.simulation.SimulationServer import SimulationServer
 
 class Simulation4DOF(SimulationServer):
     def __init__(self, websocket = DashboardWebsocket,

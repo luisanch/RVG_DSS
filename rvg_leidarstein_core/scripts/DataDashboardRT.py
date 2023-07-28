@@ -1,9 +1,9 @@
-from rvg_dss.DataModel import DataModel
+from rvg_leidarstein_core.DataModel import DataModel
 from time import sleep, time
 import argparse 
 from multiprocessing import Process, get_context
-from rvg_dss.colav.ColavManager import ColavManager
-from rvg_dss.data_relay.DashboardWebsocket import DashboardWebsocket 
+from rvg_leidarstein_core.colav.ColavManager import ColavManager
+from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket 
 
 parser = argparse.ArgumentParser(description='File opening script')
 parser.add_argument('-f', '--file', help='Path to the log file to open')

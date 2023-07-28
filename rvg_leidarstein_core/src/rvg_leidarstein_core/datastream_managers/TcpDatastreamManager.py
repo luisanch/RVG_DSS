@@ -1,8 +1,8 @@
 import socket
 import time 
 import select
-from rvg_dss.datastream_managers.Decrypter import Decrypter
-from rvg_dss.datastream_managers.DatastreamManager import DatastreamManager
+from rvg_leidarstein_core.datastream_managers.Decrypter import Decrypter
+from rvg_leidarstein_core.datastream_managers.DatastreamManager import DatastreamManager
 
 class TcpDatastreamManager(DatastreamManager):
     def __init__(self, address, buffer_size, loop_limit = 1, 

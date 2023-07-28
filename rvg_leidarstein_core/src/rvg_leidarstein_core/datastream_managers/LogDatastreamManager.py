@@ -1,5 +1,5 @@
-from rvg_dss.datastream_managers.Decrypter import Decrypter
-from rvg_dss.datastream_managers.DatastreamManager import DatastreamManager
+from rvg_leidarstein_core.datastream_managers.Decrypter import Decrypter
+from rvg_leidarstein_core.datastream_managers.DatastreamManager import DatastreamManager
 from tqdm import tqdm
 
 class LogDatastreamManager(DatastreamManager):

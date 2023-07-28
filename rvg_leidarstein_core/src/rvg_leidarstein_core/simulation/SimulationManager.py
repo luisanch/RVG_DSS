@@ -1,6 +1,6 @@
-from rvg_dss.simulation.SimulationServer import SimulationServer
-from rvg_dss.simulation.SimulationServerReplay import SimulationServerReplay
-from rvg_dss.simulation.Simulation4DOF import Simulation4DOF 
+from rvg_leidarstein_core.simulation.SimulationServer import SimulationServer
+from rvg_leidarstein_core.simulation.SimulationServerReplay import SimulationServerReplay
+from rvg_leidarstein_core.simulation.Simulation4DOF import Simulation4DOF 
 from threading import Thread
 
 class SimulationManager():

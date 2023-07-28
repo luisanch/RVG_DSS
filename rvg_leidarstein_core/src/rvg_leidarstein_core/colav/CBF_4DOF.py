@@ -1,7 +1,7 @@
 import math 
 import numpy as np 
-from rvg_dss.simulation.SimulationTransform import SimulationTransform 
-from rvg_dss.colav.CBF import CBF
+from rvg_leidarstein_core.simulation.SimulationTransform import SimulationTransform 
+from rvg_leidarstein_core.colav.CBF import CBF
 
 from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model

@@ -1,9 +1,7 @@
 
-Dashboard/node_modules/
-Server/node_modules/
-Server/build/
-DataModel/__pycache__/
-DataModel/*/__pycache__/ 
-DataModel/*/*/__pycache__/ 
+rvg_leidarstein_frontend/node_modules/ 
+rvg_leidarstein_core/__pycache__/
+rvg_leidarstein_core/*/__pycache__/ 
+rvg_leidarstein_core/*/*/__pycache__/ 
 *.pyc
-DataModel/dist/
+rvg_leidarstein_core/dist/

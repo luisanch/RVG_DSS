@@ -1,8 +1,8 @@
-from rvg_dss.data_relay.DashboardWebsocket import DashboardWebsocket
-from rvg_dss.simulation.SimulationTransform import SimulationTransform
-from rvg_dss.colav.ARPA import ARPA
-from rvg_dss.colav.CBF import CBF
-from rvg_dss.colav.CBF_4DOF import CBF_4DOF
+from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket
+from rvg_leidarstein_core.simulation.SimulationTransform import SimulationTransform
+from rvg_leidarstein_core.colav.ARPA import ARPA
+from rvg_leidarstein_core.colav.CBF import CBF
+from rvg_leidarstein_core.colav.CBF_4DOF import CBF_4DOF
 import json 
 import time
 import time   

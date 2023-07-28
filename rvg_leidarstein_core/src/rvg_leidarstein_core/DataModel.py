@@ -3,13 +3,13 @@ import pathlib
 import os
 from datetime import datetime
 import easygui
-from rvg_dss.datastream_managers.TcpDatastreamManager import TcpDatastreamManager
-from rvg_dss.datastream_managers.LogDatastreamManager import LogDatastreamManager
-from rvg_dss.serializers.FastSerializer import FastSerializer  
-from rvg_dss.colav.ColavManager import ColavManager
-from rvg_dss.simulation.SimulationManager import SimulationManager
-from rvg_dss.data_relay.DashboardWebsocket import DashboardWebsocket
-from rvg_dss.datastream_managers.Decrypter import Decrypter 
+from rvg_leidarstein_core.datastream_managers.TcpDatastreamManager import TcpDatastreamManager
+from rvg_leidarstein_core.datastream_managers.LogDatastreamManager import LogDatastreamManager
+from rvg_leidarstein_core.serializers.FastSerializer import FastSerializer  
+from rvg_leidarstein_core.colav.ColavManager import ColavManager
+from rvg_leidarstein_core.simulation.SimulationManager import SimulationManager
+from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket
+from rvg_leidarstein_core.datastream_managers.Decrypter import Decrypter 
 
 
 class DataModel:
