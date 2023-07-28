@@ -6,7 +6,15 @@ import re
 class Decrypter:
     def __init__(self, key_path, talker = '!U9SEC', field_num = 5, max_id = 10):
         self.talker = talker
-        self.key_path = key_path
+        self.key_path = key_path #this will go unused until further revision
+        self._key_string = (
+"""-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAPBiv6NqkzAIVEEmhJM45ZeGQclj4bsOgL49j++lm3GlmjilBvxw47Lv
+KJ2cxMzyfaT2/f1H8Q6ObOCebmc0SeKeAzkdJj2Qw2ydBYG6xz747mQOD0al0THo
+e5lCfv/EFRhnka1IlNBFrMrA/LKYsDVy019nGcfoQrv40Eao3XK/AgMBAAE=
+-----END RSA PUBLIC KEY-----"""
+        ) #temporary solution
+
         self._buffer = [None] * max_id 
         self._keyring = {}
         self._field_num = field_num
@@ -53,10 +61,11 @@ class Decrypter:
         if key_name in self._keyring:
             key = self._keyring[key_name] 
         else: 
-            key_path = os.path.join(self.key_path, key_name) 
-            key_string = open(key_path, "r").read()
+            #fix this when the key issue is sorted out
+            # key_path = os.path.join(self.key_path, key_name) 
+            # key_string = open(key_path, "r").read()
             
-            key = RSA.importKey(key_string)
+            key = RSA.importKey(self._key_string)
             self._keyring[key_name] = key
         
         return key, cypher
