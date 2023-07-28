@@ -30,11 +30,11 @@ class DashboardWebsocket:
             msg = json.loads(raw)
 
             if msg['type'] == 'datain': 
-                msg_id = msg['data']['message_id']
+                msg_id = msg['content']['message_id']
 
                 for filter in self._receive_filters:
                     if msg_id == filter:
-                        val = msg['data']['val']
+                        val = msg['content']['val']
                         self.received_data[msg_id] = val 
 
     def close(self):

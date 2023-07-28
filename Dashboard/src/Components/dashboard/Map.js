@@ -56,7 +56,6 @@ const MyMap = (props) => {
       },
     };
     sendMessage(JSON.stringify(message, null, 2));
-    console.log(message);
   };
 
   const handleSlider2Change = (event, newValue) => {

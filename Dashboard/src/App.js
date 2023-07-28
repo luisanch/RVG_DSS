@@ -42,7 +42,7 @@ function App() {
   }
 
   useEffect(() => {
-    if (lastMessage !== null) {
+    if (lastMessage !== null) {  
       let newMsg = parseDataIn(lastMessage.data);
       if (newMsg === null) return;
       messageHistory.push(newMsg);
@@ -52,8 +52,8 @@ function App() {
     }
   }, [lastMessage, messageHistory]);
 
-  function parseDataIn(msgString) {
-    const msg = JSON.parse(msgString).data;
+  function parseDataIn(msgString) { 
+    const msg = JSON.parse(msgString).content; 
 
     if (
       nmeaFilters.includes(msg.message_id) ||
