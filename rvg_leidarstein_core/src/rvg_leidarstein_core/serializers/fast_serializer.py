@@ -1,13 +1,13 @@
-from rvg_leidarstein_core.serializers.Serializer import Serializer
-from rvg_leidarstein_core.datastream_managers.DatastreamManager import DatastreamManager
+from rvg_leidarstein_core.serializers.serializer import serializer
+from rvg_leidarstein_core.datastream_managers.datastream_manager import datastream_manager
 
 
-class FastSerializer(Serializer):
+class fast_serializer(serializer):
     def __init__(
         self,
         save_headers,
         df_aliases,
-        datastream_manager=DatastreamManager,
+        datastream_manager=datastream_manager,
         overwrite_headers=False,
         verbose=False,
     ):

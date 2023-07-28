@@ -4,7 +4,7 @@ import os
 import re
 
 
-class Decrypter:
+class decrypter:
     def __init__(self, key_path, talker="!U9SEC", field_num=5, max_id=10):
         self.talker = talker
         self.key_path = key_path  # this will go unused until further revision

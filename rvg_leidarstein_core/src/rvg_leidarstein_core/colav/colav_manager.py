@@ -1,14 +1,14 @@
-from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket
-from rvg_leidarstein_core.simulation.SimulationTransform import SimulationTransform
-from rvg_leidarstein_core.colav.ARPA import ARPA
-from rvg_leidarstein_core.colav.CBF import CBF
-from rvg_leidarstein_core.colav.CBF_4DOF import CBF_4DOF
+from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
+from rvg_leidarstein_core.colav.arpa import arpa
+from rvg_leidarstein_core.colav.cbf import cbf
+from rvg_leidarstein_core.colav.cbf_4dof import cbf_4dof
 import json
 import time
 import time
 
 
-class ColavManager:
+class colav_manager:
     def __init__(
         self,
         enable=True,
@@ -17,7 +17,7 @@ class ColavManager:
         safety_radius_tol=1.5,
         max_d_2_cpa=2000,
         gunnerus_mmsi="",
-        websocket=DashboardWebsocket,
+        websocket=rvg_leidarstein_websocket,
         dummy_gunnerus=None,
         dummy_vessel=None,
         print_comp_t=False,
@@ -37,7 +37,7 @@ class ColavManager:
         self._update_interval = update_interval
         self.gunnerus_mmsi = gunnerus_mmsi
         self._timeout = time.time() + update_interval
-        self._transform = SimulationTransform()
+        self._transform = simulation_transform()
         self._prediction_interval = update_interval * 2
         self._safety_radius_m = safety_radius_m
         self._safety_radius_tol = safety_radius_tol
@@ -49,7 +49,7 @@ class ColavManager:
         self.print_c_time = print_comp_t
         self.prediction_t = prediction_t
 
-        self._arpa = ARPA(
+        self._arpa = arpa(
             safety_radius_m=self._safety_radius_m,
             safety_radius_tol=self._safety_radius_tol,
             max_d_2_cpa=self._max_d_2_cpa,
@@ -58,7 +58,7 @@ class ColavManager:
         )
 
         if self._cbf_type == self.dof4_cbf:
-            self._cbf = CBF_4DOF(
+            self._cbf = cbf_4dof(
                 safety_radius_m=self._safety_radius_m,
                 transform=self._transform,
                 k2=0.5,
@@ -66,7 +66,7 @@ class ColavManager:
                 t_tot=self.prediction_t,
             )
         else:
-            self._cbf = CBF(
+            self._cbf = cbf(
                 safety_radius_m=self._safety_radius_m,
                 transform=self._transform,
                 t_tot=self.prediction_t,

@@ -2,7 +2,7 @@ import websocket
 import json
 
 
-class DashboardWebsocket:
+class rvg_leidarstein_websocket:
     def __init__(
         self,
         address,

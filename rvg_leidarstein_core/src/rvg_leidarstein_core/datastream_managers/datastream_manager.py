@@ -1,17 +1,17 @@
 import sys
 import pynmea2
 from pyais import decode as ais_decode
-from rvg_leidarstein_core.datastream_managers.Decrypter import Decrypter
+from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
 
 
-class DatastreamManager:
+class datastream_manager:
     def __init__(
         self,
         loop_limit=1,
         verbosity=(False, False, False, False, False),
         log_stream=("datstream_5min.txt", 300, False),
         socket_timeout=5,
-        decrypter=Decrypter,
+        decrypter=decrypter,
         drop_ais_messages=True,
         prefixFilter=[],
         suffixFilter="",

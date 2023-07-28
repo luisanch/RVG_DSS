@@ -1,27 +1,27 @@
-from rvg_leidarstein_core.datastream_managers.LogDatastreamManager import (
-    LogDatastreamManager,
+from rvg_leidarstein_core.datastream_managers.log_datastream_manager import (
+    log_datastream_manager,
 )
-from rvg_leidarstein_core.serializers.FastSerializer import FastSerializer
-from rvg_leidarstein_core.simulation.SimulationServer import SimulationServer
-from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket
-from rvg_leidarstein_core.colav.ColavManager import ColavManager
+from rvg_leidarstein_core.serializers.fast_serializer import fast_serializer
+from rvg_leidarstein_core.simulation.simulation_server import simulation_server
+from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from rvg_leidarstein_core.colav.colav_manager import colav_manager
 from time import time
 
 
-class SimulationServerReplay(SimulationServer):
+class simulation_server_replay(simulation_server):
     def __init__(
         self,
-        serializer=FastSerializer,
-        log_datastream_manager=LogDatastreamManager,
-        websocket=DashboardWebsocket,
+        serializer=fast_serializer,
+        log_datastream_manager=log_datastream_manager,
+        websocket=rvg_leidarstein_websocket,
         distance_filter=None,
         predicted_interval=30,
-        colav_manager=ColavManager,
+        colav_manager=colav_manager,
         filt_order=3,
         filt_cutfreq=0.1,
         filt_nyqfreq=0.5,
     ):
-        super(SimulationServerReplay, self).__init__(
+        super(simulation_server_replay, self).__init__(
             serializer,
             websocket,
             distance_filter,

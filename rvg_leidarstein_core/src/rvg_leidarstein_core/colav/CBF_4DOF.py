@@ -1,13 +1,13 @@
 import math
 import numpy as np
-from rvg_leidarstein_core.simulation.SimulationTransform import SimulationTransform
-from rvg_leidarstein_core.colav.CBF import CBF
+from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
+from rvg_leidarstein_core.colav.cbf import cbf
 
 from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
 
 
-class CBF_4DOF(CBF):
+class cbf_4dof(cbf):
     def __init__(
         self,
         safety_radius_m,
@@ -22,9 +22,9 @@ class CBF_4DOF(CBF):
         rd_max=1,
         n_ub=20,
         max_rd=0.18,
-        transform=SimulationTransform(),
+        transform=simulation_transform(),
     ):
-        super(CBF_4DOF, self).__init__(
+        super(cbf_4dof, self).__init__(
             safety_radius_m,
             k1=1,
             lam=0.5,
@@ -35,7 +35,7 @@ class CBF_4DOF(CBF):
             rd_max=1,
             n_ub=20,
             max_rd=0.18,
-            transform=SimulationTransform(),
+            transform=simulation_transform(),
         )
         self.dt = dt
         self.parV, self.parA = model.DefaultModelData()

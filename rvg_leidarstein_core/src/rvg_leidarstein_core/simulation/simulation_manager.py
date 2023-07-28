@@ -1,12 +1,12 @@
-from rvg_leidarstein_core.simulation.SimulationServer import SimulationServer
-from rvg_leidarstein_core.simulation.SimulationServerReplay import (
-    SimulationServerReplay,
+from rvg_leidarstein_core.simulation.simulation_server import simulation_server
+from rvg_leidarstein_core.simulation.simulation_server_replay import (
+    simulation_server_replay,
 )
-from rvg_leidarstein_core.simulation.Simulation4DOF import Simulation4DOF
+from rvg_leidarstein_core.simulation.simulation_4dof import simulation_4dof
 from threading import Thread
 
 
-class SimulationManager:
+class simulation_manager:
     def __init__(
         self,
         datastream_manager,
@@ -33,9 +33,9 @@ class SimulationManager:
         self.mode_replay = "replay"
         self.mode_rt = "rt"
         self.mode = mode
-        self.SimulationServer = SimulationServer
+        self.simulation_server = simulation_server
         self.running = False
-        self.thread_sim_server = Thread(target=self.SimulationServer.start)
+        self.thread_sim_server = Thread(target=self.simulation_server.start)
 
     def _has_prop(self, msg, prop=""):
         msg_keys = msg.keys()
@@ -45,7 +45,7 @@ class SimulationManager:
     def _format_init(self, msg, head):
         revs = self.rvg_init["revs"]
         azi = self.rvg_init["azi_d"]
-        msg = self.SimulationServer.rvg_state
+        msg = self.simulation_server.rvg_state
         msg["lat"] = float(msg["lat"])
         msg["lon"] = float(msg["lon"])
         msg["true_course"] = float(head)
@@ -58,14 +58,14 @@ class SimulationManager:
         self.thread_sim_server.start()
 
     def stop_sim(self):
-        self.SimulationServer.stop()
+        self.simulation_server.stop()
 
     def stop(self):
         self.running = False
         self.stop_sim()
 
     def start(self):
-        self.thread_sim_server = Thread(target=self.SimulationServer.start)
+        self.thread_sim_server = Thread(target=self.simulation_server.start)
         self.start_sim()
         self.running = True
         while self.running:
@@ -74,20 +74,20 @@ class SimulationManager:
                 mode = self.websocket.received_data["data_mode"]
                 if mode == self.mode_4dof and self.mode == self.mode_rt:
                     self.rvg_init = self._format_init(
-                        self.SimulationServer.rvg_state,
-                        self.SimulationServer.rvg_heading,
+                        self.simulation_server.rvg_state,
+                        self.simulation_server.rvg_heading,
                     )
 
                 print("switching")
                 self.mode = self.websocket.received_data["data_mode"]
                 self.stop_sim()
                 self.set_simulation_type(self.mode)
-                self.thread_sim_server = Thread(target=self.SimulationServer.start)
+                self.thread_sim_server = Thread(target=self.simulation_server.start)
                 self.start_sim()
 
     def set_simulation_type(self, mode):
         if mode == self.mode_replay:
-            self.SimulationServer = SimulationServerReplay(
+            self.simulation_server = simulation_server_replay(
                 log_datastream_manager=self.datastream_manager,
                 serializer=self.serializer,
                 websocket=self.websocket,
@@ -96,7 +96,7 @@ class SimulationManager:
                 colav_manager=self.Colav_Manager,
             )
         elif mode == self.mode_4dof:
-            self.SimulationServer = Simulation4DOF(
+            self.simulation_server = simulation_4dof(
                 websocket=self.websocket,
                 serializer=self.serializer,
                 distance_filter=self.distance_filter,
@@ -106,7 +106,7 @@ class SimulationManager:
                 rvg_init=self.rvg_init,
             )
         else:
-            self.SimulationServer = SimulationServer(
+            self.simulation_server = simulation_server(
                 serializer=self.serializer,
                 websocket=self.websocket,
                 distance_filter=self.distance_filter,

@@ -3,12 +3,12 @@ from os import listdir
 from os.path import isfile, join
 
 
-class SortedData(object):
+class sorted_data(object):
     def __getitem__(self, item):
         return getattr(self, item)
 
 
-class Serializer:
+class serializer:
     def __init__(
         self,
         datastream_manager,
@@ -25,7 +25,7 @@ class Serializer:
         self.def_unk_atr_name = "unknown_"
 
         self._datastream_manager = datastream_manager
-        self.sorted_data = SortedData()
+        self.sorted_data = sorted_data()
         self._running = False
         self._save_headers = save_headers[0]
         self._headers_path = save_headers[1]
@@ -81,7 +81,7 @@ class Serializer:
 
         for name, file in zip(names, headers):
             df = pd.read_pickle(file)
-            setattr(SortedData, name, df)
+            setattr(sorted_data, name, df)
         print("Headers Loaded.")
 
     def stop(self):

@@ -1,21 +1,21 @@
 import numpy as np
 from scipy.signal import butter, filtfilt
 import json
-from rvg_leidarstein_core.simulation.SimulationTransform import SimulationTransform
-from rvg_leidarstein_core.serializers.FastSerializer import FastSerializer
-from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket
-from rvg_leidarstein_core.colav.ColavManager import ColavManager
+from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
+from rvg_leidarstein_core.serializers.fast_serializer import fast_serializer
+from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from rvg_leidarstein_core.colav.colav_manager import colav_manager
 import math
 
 
-class SimulationServer:
+class simulation_server:
     def __init__(
         self,
-        serializer=FastSerializer,
-        websocket=DashboardWebsocket,
+        serializer=fast_serializer,
+        websocket=rvg_leidarstein_websocket,
         distance_filter=None,
         predicted_interval=30,
-        colav_manager=ColavManager,
+        colav_manager=colav_manager,
         filt_order=3,
         filt_cutfreq=0.1,
         filt_nyqfreq=0.5,
@@ -23,7 +23,7 @@ class SimulationServer:
         self._serializer = serializer
         self._buffer = serializer.sorted_data
         self._running = False
-        self.transform = SimulationTransform()
+        self.transform = simulation_transform()
         self.ais_history = dict()
         self.ais_history_len = 30
         self.distance_filter = distance_filter

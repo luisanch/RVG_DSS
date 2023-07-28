@@ -1,16 +1,16 @@
 import math
 import numpy as np
-from rvg_leidarstein_core.simulation.SimulationTransform import SimulationTransform
+from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
 import copy
 
 
-class ARPA:
+class arpa:
     def __init__(
         self,
         safety_radius_m,
         safety_radius_tol=1.5,
         max_d_2_cpa=2000,
-        transform=SimulationTransform(),
+        transform=simulation_transform(),
         gunnerus_mmsi="",
     ):
         self._gunnerus_mmsi = gunnerus_mmsi

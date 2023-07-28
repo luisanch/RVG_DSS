@@ -1,15 +1,15 @@
-from rvg_leidarstein_core.datastream_managers.Decrypter import Decrypter
-from rvg_leidarstein_core.datastream_managers.DatastreamManager import DatastreamManager
+from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
+from rvg_leidarstein_core.datastream_managers.datastream_manager import datastream_manager
 from tqdm import tqdm
 
 
-class LogDatastreamManager(DatastreamManager):
+class log_datastream_manager(datastream_manager):
     def __init__(
         self,
         path,
         loop_limit=1,
         verbosity=(False, False, False, False, False),
-        decrypter=Decrypter,
+        decrypter=decrypter,
         drop_ais_messages=True,
         prefixFilter=[],
         suffixFilter="",

@@ -3,22 +3,22 @@ import pathlib
 import os
 from datetime import datetime
 import easygui
-from rvg_leidarstein_core.datastream_managers.TcpDatastreamManager import (
-    TcpDatastreamManager,
+from rvg_leidarstein_core.datastream_managers.tcp_datastream_manager import (
+    tcp_datastream_manager,
 )
-from rvg_leidarstein_core.datastream_managers.LogDatastreamManager import (
-    LogDatastreamManager,
+from rvg_leidarstein_core.datastream_managers.log_datastream_manager import (
+    log_datastream_manager,
 )
-from rvg_leidarstein_core.serializers.FastSerializer import FastSerializer
-from rvg_leidarstein_core.colav.ColavManager import ColavManager
-from rvg_leidarstein_core.simulation.SimulationManager import SimulationManager
-from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket
-from rvg_leidarstein_core.datastream_managers.Decrypter import Decrypter
+from rvg_leidarstein_core.serializers.fast_serializer import fast_serializer
+from rvg_leidarstein_core.colav.colav_manager import colav_manager
+from rvg_leidarstein_core.simulation.simulation_manager import simulation_manager
+from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
 
 
-class DataModel:
+class core:
     def __init__(
-        self, colav_manager=ColavManager, websocket=DashboardWebsocket, log_file=None
+        self, colav_manager=colav_manager, websocket=rvg_leidarstein_websocket, log_file=None
     ):
         # Todo: add flush() functionality across related classes to purge data
         # and prevent stack overflow / slowdown over extended use
@@ -43,9 +43,9 @@ class DataModel:
         )
         self.log_path = os.path.join(self.abs_path, "DataStreams", self.log_name)
         self.log_stream = (self.log_path, self.log_time, self.save_logs)
-        self.Colav_Manager = colav_manager
+        self.colav_manager = colav_manager
         self.key_path = os.path.join(self.abs_path, "rvg_dss", "key")
-        self.Datastream_Decrypter = Decrypter(key_path=self.key_path)
+        self.datastream_decrypter = decrypter(key_path=self.key_path)
         self.websocket = websocket
         # if True a log can be selected and used as the data source
         self.stream_saved_log = False
@@ -65,21 +65,21 @@ class DataModel:
             if self.log_file is None:
                 self.load_path = easygui.fileopenbox()
 
-            self.Datastream_Manager = LogDatastreamManager(
+            self.datastream_manager = log_datastream_manager(
                 path=self.load_path,
                 verbosity=self.verbosity,
-                decrypter=self.Datastream_Decrypter,
+                decrypter=self.datastream_decrypter,
                 drop_ais_messages=self.drop_ais_message,
                 prefixFilter=self.prefixFilter,
                 suffixFilter=self.suffixFilter,
             )
         else:
-            self.Datastream_Manager = TcpDatastreamManager(
+            self.datastream_manager = tcp_datastream_manager(
                 address=self.address,
                 buffer_size=self.buffer_size,
                 verbosity=self.verbosity,
                 log_stream=self.log_stream,
-                decrypter=self.Datastream_Decrypter,
+                decrypter=self.datastream_decrypter,
                 drop_ais_messages=self.drop_ais_message,
                 prefixFilter=self.prefixFilter,
                 suffixFilter=self.suffixFilter,
@@ -128,8 +128,8 @@ class DataModel:
         self.overwrite_headers = True
         self.dl_verbose = (False, False)
 
-        self.Serializer = FastSerializer(
-            datastream_manager=self.Datastream_Manager,
+        self.serializer = fast_serializer(
+            datastream_manager=self.datastream_manager,
             save_headers=self.save_headers,
             df_aliases=self.df_aliases,
             overwrite_headers=self.overwrite_headers,
@@ -164,12 +164,12 @@ class DataModel:
 
         self.run_4DOF_sim = True
 
-        self.SimulationManager = SimulationManager(
-            datastream_manager=self.Datastream_Manager,
-            serializer=self.Serializer,
+        self.simulation_manager = simulation_manager(
+            datastream_manager=self.datastream_manager,
+            serializer=self.serializer,
             websocket=self.websocket,
             distance_filter=self.distance_filter,
-            Colav_Manager=self.Colav_Manager,
+            Colav_Manager=self.colav_manager,
             rvg_init=self.dummy_gunnerus,
             tmax=1,
             dt=0.2,
@@ -179,19 +179,19 @@ class DataModel:
 
         # Select 'Simulation' source: saved log, 4dof, or rt
         if self.stream_saved_log:
-            self.SimulationManager.set_simulation_type(
-                self.SimulationManager.mode_replay
+            self.simulation_manager.set_simulation_type(
+                self.simulation_manager.mode_replay
             )
         elif self.run_4DOF_sim:
-            self.SimulationManager.set_simulation_type(self.SimulationManager.mode_4dof)
+            self.simulation_manager.set_simulation_type(self.simulation_manager.mode_4dof)
         else:
-            self.SimulationManager.set_simulation_type(self.SimulationManager.mode_rt)
+            self.simulation_manager.set_simulation_type(self.simulation_manager.mode_rt)
 
         # Create new threads
         self.thread_websocket_receive = Thread(target=self.websocket.start)
-        self.thread_datastream = Thread(target=self.Datastream_Manager.start)
-        self.thread_serialize_data = Thread(target=self.Serializer.start)
-        self.thread_sim_manager = Thread(target=self.SimulationManager.start)
+        self.thread_datastream = Thread(target=self.datastream_manager.start)
+        self.thread_serialize_data = Thread(target=self.serializer.start)
+        self.thread_sim_manager = Thread(target=self.simulation_manager.start)
 
     def start(self):
         if self.websocket.enable:
@@ -201,8 +201,8 @@ class DataModel:
         self.thread_sim_manager.start()
 
     def stop(self):
-        self.Datastream_Manager.stop()
-        self.Serializer.stop()
-        self.SimulationManager.stop()
+        self.datastream_manager.stop()
+        self.serializer.stop()
+        self.simulation_manager.stop()
         self.websocket.close()
         print("Exiting...")

@@ -1,11 +1,11 @@
 import socket
 import time
 import select
-from rvg_leidarstein_core.datastream_managers.Decrypter import Decrypter
-from rvg_leidarstein_core.datastream_managers.DatastreamManager import DatastreamManager
+from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
+from rvg_leidarstein_core.datastream_managers.datastream_manager import datastream_manager
 
 
-class TcpDatastreamManager(DatastreamManager):
+class tcp_datastream_manager(datastream_manager):
     def __init__(
         self,
         address,
@@ -14,7 +14,7 @@ class TcpDatastreamManager(DatastreamManager):
         verbosity=(False, False, False, False, False),
         log_stream=("datstream_5min.txt", 300, False),
         socket_timeout=5,
-        decrypter=Decrypter,
+        decrypter=decrypter,
         drop_ais_messages=True,
         prefixFilter=[],
         suffixFilter="",

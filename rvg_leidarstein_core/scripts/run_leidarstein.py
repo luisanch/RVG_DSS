@@ -1,9 +1,9 @@
-from rvg_leidarstein_core.DataModel import DataModel
+from rvg_leidarstein_core.core import core
 from time import sleep, time
 import argparse
 from multiprocessing import Process, get_context
-from rvg_leidarstein_core.colav.ColavManager import ColavManager
-from rvg_leidarstein_core.data_relay.DashboardWebsocket import DashboardWebsocket
+from rvg_leidarstein_core.colav.colav_manager import colav_manager
+from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
 
 parser = argparse.ArgumentParser(description="File opening script")
 parser.add_argument("-f", "--file", help="Path to the log file to open")
@@ -11,11 +11,11 @@ args = parser.parse_args()
 
 ws_enable = True
 ws_address = "ws://127.0.0.1:8000"
-websocket = DashboardWebsocket(ws_address, ws_enable)
+websocket = rvg_leidarstein_websocket(ws_address, ws_enable)
 gunnerus_mmsi = "258342000"
 
 # Initialize ColavManager
-Colav_Manager = ColavManager(
+colav_manager = colav_manager(
     enable=True,
     update_interval=10,
     websocket=websocket,
@@ -31,30 +31,30 @@ Colav_Manager = ColavManager(
 
 # Initialize DataModel
 if args.file:
-    GunnerusData = DataModel(
-        websocket=websocket, colav_manager=Colav_Manager, log_file=args.file
+    rvg_data = core(
+        websocket=websocket, colav_manager=colav_manager, log_file=args.file
     )
 else:
-    GunnerusData = DataModel(
+    rvg_data = core(
         websocket=websocket,
-        colav_manager=Colav_Manager,
+        colav_manager=colav_manager,
     )
 
 if __name__ == "__main__":
-    process_cbf_data = Colav_Manager._cbf._process_data
+    process_cbf_data = colav_manager._cbf._process_data
     ctx = get_context("spawn")
     q = ctx.Queue()
 
     try:
-        GunnerusData.start()
-        Colav_Manager.start()
+        rvg_data.start()
+        colav_manager.start()
 
         # CBF process is created here
         while True:
-            if time() > Colav_Manager._timeout and Colav_Manager._running:
+            if time() > colav_manager._timeout and colav_manager._running:
                 start = time()
-                if Colav_Manager.update():
-                    p, u, z, tq, po, zo, uo = Colav_Manager.sort_cbf_data()
+                if colav_manager.update():
+                    p, u, z, tq, po, zo, uo = colav_manager.sort_cbf_data()
 
                     # CBF computation is run in a separate process
                     cbf_process = Process(
@@ -63,10 +63,10 @@ if __name__ == "__main__":
                     cbf_process.start()
                     ret_var = q.get()
                     cbf_process.join()
-                    Colav_Manager.send_cbf_data(ret_var)
+                    colav_manager.send_cbf_data(ret_var)
                 end = time()
 
-                if Colav_Manager.print_c_time:
+                if colav_manager.print_c_time:
                     print("end update Arpa + CBF", end - start)
 
             # wait around, catch keyboard interrupt
@@ -74,5 +74,5 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         # terminate main thread
-        GunnerusData.stop()
+        rvg_data.stop()
         print("Exiting...")

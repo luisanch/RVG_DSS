@@ -1,11 +1,11 @@
 import math
 import numpy as np
 import copy
-from rvg_leidarstein_core.simulation.SimulationTransform import SimulationTransform
+from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
 from time import time
 
 
-class CBF:
+class cbf:
     def __init__(
         self,
         safety_radius_m,
@@ -18,7 +18,7 @@ class CBF:
         rd_max=1,
         n_ub=20,
         max_rd=0.18,
-        transform=SimulationTransform(),
+        transform=simulation_transform(),
     ):
         self._safety_radius_m = safety_radius_m
         self._gunn_data = {}

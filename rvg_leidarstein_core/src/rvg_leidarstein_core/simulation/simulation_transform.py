@@ -3,7 +3,7 @@ import math
 import pymap3d as pm
 
 
-class SimulationTransform:
+class simulation_transform:
     def __init__(self):
         self.gps_data = pd.DataFrame()
         self.attitude_data = pd.DataFrame()
