@@ -1,4 +1,4 @@
-from DataModel import DataModel
+from rvg_dss.DataModel import DataModel
 from time import sleep, time
 import argparse 
 from multiprocessing import Process, get_context

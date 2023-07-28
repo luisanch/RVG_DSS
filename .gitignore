@@ -6,3 +6,4 @@ DataModel/__pycache__/
 DataModel/*/__pycache__/ 
 DataModel/*/*/__pycache__/ 
 *.pyc
+DataModel/dist/
