@@ -3,6 +3,7 @@ import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
 import getMarkers from "./Markers";
 import getArpa from "./Arpa";
 import getPaths from "./Paths";
+import getCourses from "./Courses";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
@@ -30,8 +31,7 @@ const MyMap = (props) => {
   const data = props.data;
   const sendMessage = props.sendMessage;
   const markerSize = 20;
-  const settings = props.settings;
-  const courseColor = "orange";
+  const settings = props.settings; 
 
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
@@ -341,35 +341,7 @@ const MyMap = (props) => {
     );
   });
 
-  const listCourses = aisData.map((ais) => {
-    if (
-      isNaN(Number(ais.lat)) ||
-      isNaN(Number(ais.lon)) ||
-      !ais.hasOwnProperty("lat_p") ||
-      !ais.hasOwnProperty("lon_p") ||
-      ais.speed <= 0
-    )
-      return null;
-
-    return (
-      <GeoJson
-        key={"2" + String(ais.mmsi)}
-        data={getGeoLine([
-          [ais.lon, ais.lat],
-          [ais.lon_p, ais.lat_p],
-        ])}
-        styleCallback={(feature, hover) => {
-          return {
-            fill: "#00000000",
-            strokeWidth: "2",
-            stroke: courseColor,
-            r: "20",
-          };
-        }}
-      />
-    );
-  });
-
+  const listCourses = getCourses(aisData, getGeoLine);
   const listMarkers = getMarkers(aisData, aisObject, setTipText, markerSize);
   const listArpa = getArpa(
     settings,
