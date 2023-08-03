@@ -13,10 +13,6 @@ export default function Settings(props) {
     update("showHitbox", event.target.checked);
   };
 
-  const handleChangeOverlay = (event) => {
-    update("showDebugOverlay", event.target.checked);
-  };
-
   const handleChangeNavigation = (event) => {
     update("navigationMode", event.target.checked);
   };
@@ -85,16 +81,6 @@ export default function Settings(props) {
           />
         }
         label="Always display ARPA tooltips"
-      />
-      <FormControlLabel
-        control={
-          <Checkbox
-            id="showdebugoverlay"
-            checked={settings.showDebugOverlay}
-            onChange={handleChangeOverlay}
-          />
-        }
-        label="Show Debug Overlay"
       />
       <FormControlLabel
         control={

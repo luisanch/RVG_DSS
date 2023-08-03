@@ -1,8 +1,9 @@
 import { GeoJson } from "pigeon-maps";
+import { getGeoLine } from "../utils";
 
 const previousPathColor = "blue";
 
-function getPaths(aisData, getGeoLine) {
+function getPaths(aisData) {
   const listPreviousPaths = aisData.map((ais) => {
     if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon)) || ais.speed <= 0)
       return null;

@@ -1,8 +1,9 @@
 import { GeoJson } from "pigeon-maps";
+import { getGeoLine } from "../utils";
 
 const courseColor = "orange";
 
-function getCourses(aisData, getGeoLine) {
+function getCourses(aisData) {
   const listCourses = aisData.map((ais) => {
     if (
       isNaN(Number(ais.lat)) ||

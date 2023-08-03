@@ -16,7 +16,7 @@ const aisObject = {};
 let countdown = -1;
 const refreshInterval = 500;
 const cleanupInterval = 15000;
-let cleanupCoundownARPA = cleanupInterval;
+let cleanupCountdownARPA = cleanupInterval;
 let cleanupCoundownCBF = cleanupInterval;
 
 // This definitely needs to be broken up into smaller components.
@@ -43,16 +43,42 @@ const MyMap = (props) => {
     setZoomScale(scale);
   };
 
+  function setGunnerusPos(data) {
+    const lon = data.lon;
+    const lon_dir = data.lon_dir;
+    const lat = data.lat;
+    const lat_dir = data.lat_dir;
+    const res = [deg2dec(lat, lat_dir), deg2dec(lon, lon_dir)];
+    setMapCenter(res);
+    setAnchor(res);
+  }
+
+  function setAisObjectData(data) {
+    if (!aisObject.hasOwnProperty(data.mmsi)) {
+      aisObject[data.mmsi] = data;
+      aisObject[data.mmsi]["pinTooltip"] = false;
+      aisObject[data.mmsi]["hoverTooltip"] = false;
+    } else {
+      data["pinTooltip"] = aisObject[data.mmsi]["pinTooltip"];
+      data["hoverTooltip"] = aisObject[data.mmsi]["hoverTooltip"];
+      aisObject[data.mmsi] = data;
+    }
+  }
+
+  function clearColavData() {
+    countdown -= refreshInterval / 1000;
+    if (countdown < 0) countdown = -1;
+    cleanupCountdownARPA -= refreshInterval;
+    if (cleanupCountdownARPA < 0) setArpaObject([]);
+    cleanupCoundownCBF -= refreshInterval;
+    if (cleanupCoundownCBF < 0) setCBFObject([]);
+    setCbftimer(countdown.toFixed(2));
+  }
+
   useEffect(() => {
     if (!data) return;
     if (data.message_id === "$GPGGA_ext") {
-      const lon = data.lon;
-      const lon_dir = data.lon_dir;
-      const lat = data.lat;
-      const lat_dir = data.lat_dir;
-      const res = [deg2dec(lat, lat_dir), deg2dec(lon, lon_dir)];
-      setMapCenter(res);
-      setAnchor(res);
+      setGunnerusPos(data);
     }
 
     if (data.message_id === "$PSIMSNS_ext") {
@@ -60,19 +86,11 @@ const MyMap = (props) => {
     }
 
     if (data.message_id.indexOf("!AI") === 0) {
-      if (!aisObject.hasOwnProperty(data.mmsi)) {
-        aisObject[data.mmsi] = data;
-        aisObject[data.mmsi]["pinTooltip"] = false;
-        aisObject[data.mmsi]["hoverTooltip"] = false;
-      } else {
-        data["pinTooltip"] = aisObject[data.mmsi]["pinTooltip"];
-        data["hoverTooltip"] = aisObject[data.mmsi]["hoverTooltip"];
-        aisObject[data.mmsi] = data;
-      }
+      setAisObjectData(data);
     }
 
     if (data.message_id.indexOf("arpa") === 0) {
-      cleanupCoundownARPA = cleanupInterval;
+      cleanupCountdownARPA = cleanupInterval;
       setArpaObject(data.data);
     }
 
@@ -91,13 +109,7 @@ const MyMap = (props) => {
         return Object.values(aisObject);
       });
 
-      countdown -= refreshInterval / 1000;
-      if (countdown < 0) countdown = -1;
-      cleanupCoundownARPA -= refreshInterval;
-      if (cleanupCoundownARPA < 0) setArpaObject([]);
-      cleanupCoundownCBF -= refreshInterval;
-      if (cleanupCoundownCBF < 0) setCBFObject([]);
-      setCbftimer(countdown.toFixed(2));
+      clearColavData();
     }, refreshInterval);
     return () => {
       clearInterval(interval);
@@ -113,17 +125,10 @@ const MyMap = (props) => {
   );
 
   const listVessels = getVessels(aisData, zoomScale);
-  const listCourses = getCourses(aisData, getGeoLine);
+  const listCourses = getCourses(aisData);
   const listMarkers = getMarkers(aisData, aisObject, setTipText, markerSize);
-  const listArpa = getArpa(
-    settings,
-    arpaObject,
-    getGeoCircle,
-    getGeoLine,
-    anchor,
-    zoomScale
-  );
-  const listPreviousPaths = getPaths(aisData, getGeoLine);
+  const listArpa = getArpa(settings, arpaObject, anchor, zoomScale);
+  const listPreviousPaths = getPaths(aisData);
   const maneuverCountdown = getManeuverCountdown(
     mapCenter,
     settings,
@@ -131,11 +136,6 @@ const MyMap = (props) => {
     countdown,
     cbfTimer
   );
-  const draggable = settings.showDebugOverlay ? (
-    <Draggable offset={[900, 450]} anchor={anchor} onDragEnd={setAnchor}>
-      <p className="block">{tipText}</p>
-    </Draggable>
-  ) : null;
 
   return (
     <div className="mapcontainer">
@@ -188,7 +188,6 @@ const MyMap = (props) => {
             width={markerSize}
             anchor={mapCenter}
           ></Marker>
-          {draggable}
         </Map>
       </div>
       <Controls settings={settings} sendMessage={sendMessage} />

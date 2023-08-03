@@ -30,8 +30,7 @@ function App() {
   const [settings, setSettings] = useState({
     showHitbox: true,
     showAllTooltips: true,
-    shortTooltips: true,
-    showDebugOverlay: false,
+    shortTooltips: true, 
     navigationMode: false,
     showSimControls: false,
     simMode: "4dof",
