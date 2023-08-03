@@ -1,14 +1,34 @@
+/**
+ * A React component representing the settings form.
+ * It allows users to configure various settings for the application.
+ * The settings include ARPA data display, tooltips, navigation mode, simulation controls, and data mode.
+ *
+ * @param {object} props - The props object that contains the following properties:
+ *   @param {object} settings - An object representing the current settings for the application.
+ *   @param {function} setSettings - A function to update the settings state in the parent component.
+ *   @param {function} sendMessage - A function to send messages to the server (for simulation control).
+ *
+ * @returns {JSX.Element} - Returns a JSX element containing the settings form.
+ */
 import React, { useState } from "react";
 import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import { FormControl, InputLabel, Select, MenuItem, FormHelperText } from "@mui/material";
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
+} from "@mui/material";
 
 export default function Settings(props) {
-  const setAppSettings = props.setSettings
+  // Extracting props
+  const setAppSettings = props.setSettings;
   const [settings, setSettings] = useState(props.settings);
   const sendMessage = props.sendMessage;
 
+  // Event handlers for setting changes
   const handleChangeHitbox = (event) => {
     update("showHitbox", event.target.checked);
   };
@@ -41,15 +61,17 @@ export default function Settings(props) {
     sendMessage(JSON.stringify(message, null, 2));
   };
 
-  const update = (setting, value) => { 
-    let newSettings = props.settings
-    newSettings[setting] = value
+  // Function to update settings and propagate changes to parent component
+  const update = (setting, value) => {
+    let newSettings = props.settings;
+    newSettings[setting] = value;
     setSettings(newSettings);
-    setAppSettings(newSettings); 
+    setAppSettings(newSettings);
   };
 
   return (
     <FormGroup>
+      {/* Checkboxes for various settings */}
       <FormControlLabel
         control={
           <Checkbox
@@ -102,7 +124,8 @@ export default function Settings(props) {
         }
         label="Show Sim. Controls"
       />
-      <FormControl sx={{ m: 1, minWidth: 120 }} size="small"> 
+      {/* Select menu for data mode */}
+      <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
         <Select
           labelId="simMode-label"
           value={settings.simMode}

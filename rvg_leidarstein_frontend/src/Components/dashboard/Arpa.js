@@ -4,8 +4,13 @@ import boat from "../../Assets/ships/boat.svg";
 import boat_s from "../../Assets/ships/boat_s.svg";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 
-const arpaColor = "black";
-
+/**
+ * Create a GeoJSON circle feature from a center point, radius in kilometers, and number of points.
+ * @param {Array} center - Array representing the center point as [longitude, latitude].
+ * @param {number} radiusInKm - The radius of the circle in kilometers.
+ * @param {number} [points=64] - The number of points to generate the circle (default is 64).
+ * @returns {Object} - GeoJSON Polygon feature representing the circle.
+ */
 var createGeoJSONCircle = function (center, radiusInKm, points) {
   if (!points) points = 64;
 
@@ -33,10 +38,17 @@ var createGeoJSONCircle = function (center, radiusInKm, points) {
   return [ret];
 };
 
+// Set the color for ARPA elements
+const arpaColor = "black";
+
+// Function to generate ARPA elements based on settings, ARPA object, anchor, and zoom scale
 function getArpa(settings, arpaObject, anchor, zoomScale) {
+  // Create an array of ARPA elements based on the arpaObject data
   const listArpa = Object.values(arpaObject).map((arpa, index) => {
+    // Check if the ARPA parameters should be displayed based on the settings
     if (!settings.showHitbox) return null;
 
+    // Generate a GeoJson element for the CPA line
     let cpa = (
       <GeoJson
         key={"0" + index}
@@ -58,6 +70,7 @@ function getArpa(settings, arpaObject, anchor, zoomScale) {
       />
     );
 
+    // Generate an Overlay element for the target vessel at CPA
     let cpa_target_vessel = (
       <Overlay
         key={"4" + index}
@@ -75,6 +88,7 @@ function getArpa(settings, arpaObject, anchor, zoomScale) {
       </Overlay>
     );
 
+    // Generate an Overlay element for the self vessel at CPA
     const cpa_self_vessel = (
       <Overlay
         key={"5" + index}
@@ -92,10 +106,13 @@ function getArpa(settings, arpaObject, anchor, zoomScale) {
       </Overlay>
     );
 
+    // Check if the obstacle domain should be displayed based on the settings
     if (arpa.safety_params) {
+      let center = [arpa.lon_o_at_r, arpa.lat_o_at_r]
       const geoCircle = createGeoJSONCircle(
-        [arpa.lon_o_at_r, arpa.lat_o_at_r],
-        arpa.safety_radius / 1000
+        center,
+        arpa.safety_radius / 1000,
+        64
       );
 
       let safety_r = (
@@ -114,6 +131,7 @@ function getArpa(settings, arpaObject, anchor, zoomScale) {
         />
       );
 
+      // Generate an Overlay element for the self vessel at safety radius
       const safety_self_vessel = (
         <Overlay
           key={"6" + index}
@@ -131,6 +149,7 @@ function getArpa(settings, arpaObject, anchor, zoomScale) {
         </Overlay>
       );
 
+      // Return the ARPA elements for a vessel
       return [
         cpa,
         cpa_target_vessel,

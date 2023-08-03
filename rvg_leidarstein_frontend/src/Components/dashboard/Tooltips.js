@@ -8,6 +8,7 @@ import Paper from "@mui/material/Paper";
 
 import { Overlay } from "pigeon-maps";
 
+// Function to generate tooltips for AIS data on the map
 function getTooltips(
   aisData,
   aisObject,
@@ -15,15 +16,21 @@ function getTooltips(
   settings,
   gunnerusHeading
 ) {
+  // Create an array of tooltips for each AIS data entry
   const listTooltips = aisData.map((ais) => {
+    // Check if the latitude or longitude is not a number (invalid data), and if so, return null (no tooltip)
     if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
 
+    // If the AIS object does not have the 'pinTooltip' and 'hoverTooltip' properties, set them to false
     if (!aisObject[ais.mmsi].hasOwnProperty("pinTooltip")) {
       aisObject[ais.mmsi]["pinTooltip"] = false;
       aisObject[ais.mmsi]["hoverTooltip"] = false;
     }
+
+    // Check if ARPA data exists for this AIS entry
     const hasArpa = arpaObject.hasOwnProperty(ais.mmsi);
 
+    // Function to format text strings with a maximum length
     const formatString = (text, maxLength = 9) => {
       const stringText = String(text);
       if (stringText.length > maxLength) {
@@ -33,9 +40,12 @@ function getTooltips(
       }
     };
 
+    // Function to create tooltip content based on AIS and ARPA data
     const tooltipText = (ais) => {
+      // Check if AIS data includes ARPA parameters
       const hasSafetyParams = hasArpa && arpaObject[ais.mmsi].safety_params;
 
+      // Extract necessary information from AIS and ARPA data
       const lon = ais.lon;
       const lat = ais.lat;
       const course = ais.hasOwnProperty("course")
@@ -59,10 +69,12 @@ function getTooltips(
         ? Number(arpaObject[ais.mmsi]["d_2_r"]).toFixed(2)
         : "--";
 
+      // Function to create data objects for the tooltip table
       function createData(parameter, value, unit) {
         return { parameter, value, unit };
       }
 
+      // Define rows for the tooltip table based on settings
       const rows = settings.shortTooltips
         ? [
             createData("T2CPA", formatString(t2cpa), "s"),
@@ -84,6 +96,7 @@ function getTooltips(
             createData("Dist. to Saf. R", formatString(d2r), "m"),
           ];
 
+      // Return a Paper-wrapped TableContainer with the tooltip table
       return (
         <TableContainer
           component={Paper}
@@ -125,6 +138,7 @@ function getTooltips(
       );
     };
 
+    // Create an overlay with the tooltip content positioned based on the AIS location
     const tooltipOverlay = (
       <Overlay
         key={"6" + ais.mmsi}
@@ -135,6 +149,7 @@ function getTooltips(
       </Overlay>
     );
 
+    // Determine whether to show the tooltip based on settings and hover/pin states
     const tooltip =
       aisObject[ais.mmsi]["hoverTooltip"] ||
       aisObject[ais.mmsi].pinTooltip ||
@@ -142,10 +157,13 @@ function getTooltips(
         ? tooltipOverlay
         : null;
 
+    // Return the tooltip (or null if not shown)
     return tooltip;
   });
 
+  // Return the array of tooltips
   return listTooltips;
 }
 
+// Export the getTooltips function to make it accessible from other modules
 export default getTooltips;

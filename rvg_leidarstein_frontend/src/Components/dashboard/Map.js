@@ -12,6 +12,7 @@ import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import { deg2dec, getGeoCircle, getGeoLine } from "../utils";
 
+// Define a blank object to store AIS data and other variables
 const aisObject = {};
 let countdown = -1;
 const refreshInterval = 500;
@@ -19,15 +20,15 @@ const cleanupInterval = 15000;
 let cleanupCountdownARPA = cleanupInterval;
 let cleanupCoundownCBF = cleanupInterval;
 
-// This definitely needs to be broken up into smaller components.
-// Pigeonmaps has a tendency to complain about wrapping components.
-
+// Main map component
 const MyMap = (props) => {
+  // Destructure the props
   const data = props.data;
   const sendMessage = props.sendMessage;
   const markerSize = 20;
   const settings = props.settings;
 
+  // State variables to manage the map's center, heading, AIS data, etc.
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
   const [aisData, setAisData] = useState([]);
@@ -38,11 +39,13 @@ const MyMap = (props) => {
   const [zoomScale, setZoomScale] = useState(1);
   const [cbfTimer, setCbftimer] = useState();
 
+  // Function to handle zoom level changes
   const handleZoomLevel = (event) => {
     const scale = event.zoom / (2 * 18);
     setZoomScale(scale);
   };
 
+  // Function to set the position of the ship "Gunnerus"
   function setGunnerusPos(data) {
     const lon = data.lon;
     const lon_dir = data.lon_dir;
@@ -53,6 +56,7 @@ const MyMap = (props) => {
     setAnchor(res);
   }
 
+  // Function to update AIS data for a specific MMSI
   function setAisObjectData(data) {
     if (!aisObject.hasOwnProperty(data.mmsi)) {
       aisObject[data.mmsi] = data;
@@ -65,6 +69,7 @@ const MyMap = (props) => {
     }
   }
 
+  // Function to clear colav data after a certain interval
   function clearColavData() {
     countdown -= refreshInterval / 1000;
     if (countdown < 0) countdown = -1;
@@ -75,6 +80,7 @@ const MyMap = (props) => {
     setCbftimer(countdown.toFixed(2));
   }
 
+  // Effect hook to handle incoming data and update state variables accordingly
   useEffect(() => {
     if (!data) return;
     if (data.message_id === "$GPGGA_ext") {
@@ -103,6 +109,7 @@ const MyMap = (props) => {
     }
   }, [data, setMapCenter, setGunnerusHeading]);
 
+  // Effect hook to update AIS data and perform cleanup at regular intervals
   useEffect(() => {
     const interval = setInterval(() => {
       setAisData(() => {
@@ -116,6 +123,7 @@ const MyMap = (props) => {
     };
   }, []);
 
+  // Generate tooltips based on AIS data, ARPA data, and settings
   const listTooltips = getTooltips(
     aisData,
     aisObject,
@@ -124,11 +132,22 @@ const MyMap = (props) => {
     gunnerusHeading
   );
 
+  // Generate vessel markers based on AIS data and zoom scale
   const listVessels = getVessels(aisData, zoomScale);
+
+  // Generate courses based on AIS data
   const listCourses = getCourses(aisData);
+
+  // Generate marker elements based on AIS data, anchor, tooltip text, and marker size
   const listMarkers = getMarkers(aisData, aisObject, setTipText, markerSize);
+
+  // Generate ARPA objects based on settings, ARPA data, anchor, and zoom scale
   const listArpa = getArpa(settings, arpaObject, anchor, zoomScale);
+
+  // Generate previous paths based on AIS data
   const listPreviousPaths = getPaths(aisData);
+
+  // Generate countdown element for maneuver countdown
   const maneuverCountdown = getManeuverCountdown(
     mapCenter,
     settings,
@@ -141,6 +160,7 @@ const MyMap = (props) => {
     <div className="mapcontainer">
       <div
         className="map"
+        //  Handle the rotation for the map
         style={{
           transform: `rotate(${
             settings.navigationMode ? -gunnerusHeading : 0
@@ -154,6 +174,8 @@ const MyMap = (props) => {
           onBoundsChanged={handleZoomLevel}
         >
           {listPreviousPaths}
+
+          {/* Draw CBF based suggestion for trajectory */}
           <GeoJson
             key={"180"}
             data={getGeoLine(cbfObject)}
@@ -172,6 +194,8 @@ const MyMap = (props) => {
           {listVessels}
           {listTooltips}
           {listMarkers}
+
+          {/* Draw Gunnerus ship asset*/}
           <Overlay anchor={mapCenter} offset={[16, 44]}>
             <img
               className="overlay"
@@ -182,6 +206,8 @@ const MyMap = (props) => {
             />
           </Overlay>
           {maneuverCountdown}
+
+          {/* Draw Gunnerus marker*/}
           <Marker
             key={0}
             color="red"
@@ -190,6 +216,8 @@ const MyMap = (props) => {
           ></Marker>
         </Map>
       </div>
+
+      {/* Render the controls component and pass settings and sendMessage as props */}
       <Controls settings={settings} sendMessage={sendMessage} />
     </div>
   );
