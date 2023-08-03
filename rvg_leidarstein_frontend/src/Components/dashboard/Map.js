@@ -2,16 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
 import getMarkers from "./Markers";
 import getArpa from "./Arpa";
+import getPaths from "./Paths";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
-import boat from "../../Assets/ships/boat.svg"; 
+import boat from "../../Assets/ships/boat.svg";
 
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow"; 
+import TableRow from "@mui/material/TableRow";
 import Slider from "@mui/material/Slider";
 import Paper from "@mui/material/Paper";
 
@@ -29,9 +30,8 @@ const MyMap = (props) => {
   const data = props.data;
   const sendMessage = props.sendMessage;
   const markerSize = 20;
-  const settings = props.settings; 
+  const settings = props.settings;
   const courseColor = "orange";
-  const previousPathColor = "blue";
 
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
@@ -58,7 +58,7 @@ const MyMap = (props) => {
   };
 
   const handleSlider2Change = (event, newValue) => {
-    setSlider2Value(newValue); 
+    setSlider2Value(newValue);
     const message = {
       type: "datain",
       content: {
@@ -82,7 +82,6 @@ const MyMap = (props) => {
     let dec = (coord / 100 - deg) * (10 / 6);
     return dir * (deg + dec);
   };
-
 
   const getGeoLine = (points) => {
     return {
@@ -132,8 +131,7 @@ const MyMap = (props) => {
       setGunnerusHeading(data.head_deg);
     }
 
-    if (data.message_id.indexOf("!AI") === 0) { 
-
+    if (data.message_id.indexOf("!AI") === 0) {
       if (!aisObject.hasOwnProperty(data.mmsi)) {
         aisObject[data.mmsi] = data;
         aisObject[data.mmsi]["pinTooltip"] = false;
@@ -150,7 +148,7 @@ const MyMap = (props) => {
       setArpaObject(data.data);
     }
 
-    if (data.message_id.indexOf("cbf") === 0) { 
+    if (data.message_id.indexOf("cbf") === 0) {
       cleanupCoundownCBF = cleanupInterval;
       setCBFObject(data.data.cbf);
       const d = new Date();
@@ -372,30 +370,16 @@ const MyMap = (props) => {
     );
   });
 
-  const listMarkers = getMarkers(aisData, aisObject, setTipText, markerSize)
-  const listArpa =getArpa(settings, arpaObject, getGeoCircle ,getGeoLine, anchor, zoomScale)
-  const listPreviousPaths = aisData.map((ais) => {
-    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon)) || ais.speed <= 0)
-      return null;
-
-    return (
-      <GeoJson
-        key={"2" + String(ais.mmsi)}
-        data={getGeoLine(ais.pos_history)}
-        styleCallback={(feature, hover) => {
-          return {
-            fill: "#00000000",
-            strokeWidth: "1",
-            opacity: 0.5,
-            stroke: previousPathColor,
-            r: "20",
-          };
-        }}
-      />
-    );
-  });
-
-  
+  const listMarkers = getMarkers(aisData, aisObject, setTipText, markerSize);
+  const listArpa = getArpa(
+    settings,
+    arpaObject,
+    getGeoCircle,
+    getGeoLine,
+    anchor,
+    zoomScale
+  );
+  const listPreviousPaths = getPaths(aisData, getGeoLine);
 
   const draggable = settings.showDebugOverlay ? (
     <Draggable offset={[900, 450]} anchor={anchor} onDragEnd={setAnchor}>
