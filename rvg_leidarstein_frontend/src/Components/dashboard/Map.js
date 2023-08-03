@@ -1,5 +1,6 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Map, Marker, Overlay, GeoJson, Draggable } from "pigeon-maps";
+import getMarkers from "./Markers";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 import boat from "../../Assets/ships/boat.svg";
@@ -9,11 +10,9 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Stack from "@mui/material/Stack";
+import TableRow from "@mui/material/TableRow"; 
 import Slider from "@mui/material/Slider";
 import Paper from "@mui/material/Paper";
-import { maxHeight } from "@mui/system";
 
 const aisObject = {};
 let countdown = -1;
@@ -143,19 +142,6 @@ const MyMap = (props) => {
     };
   };
 
-  const getGeoPoint = (coord) => {
-    return {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: coord },
-          properties: { prop0: "value0" },
-        },
-      ],
-    };
-  };
-
   useEffect(() => {
     if (!data) return;
     if (data.message_id === "$GPGGA_ext") {
@@ -172,8 +158,7 @@ const MyMap = (props) => {
       setGunnerusHeading(data.head_deg);
     }
 
-    if (data.message_id.indexOf("!AI") === 0) {
-      // console.log(data);
+    if (data.message_id.indexOf("!AI") === 0) { 
 
       if (!aisObject.hasOwnProperty(data.mmsi)) {
         aisObject[data.mmsi] = data;
@@ -191,8 +176,7 @@ const MyMap = (props) => {
       setArpaObject(data.data);
     }
 
-    if (data.message_id.indexOf("cbf") === 0) {
-      // console.log(JSON.stringify(data.data.maneuver_start, null, 2));
+    if (data.message_id.indexOf("cbf") === 0) { 
       cleanupCoundownCBF = cleanupInterval;
       setCBFObject(data.data.cbf);
       const d = new Date();
@@ -207,7 +191,6 @@ const MyMap = (props) => {
         return Object.values(aisObject);
       });
 
-      // console.log(countdown);
       countdown -= refreshInterval / 1000;
       if (countdown < 0) countdown = -1;
       cleanupCoundownARPA -= refreshInterval;
@@ -351,27 +334,6 @@ const MyMap = (props) => {
     return tooltip;
   });
 
-  const listMarkers = aisData.map((ais) => {
-    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
-
-    return (
-      <Marker
-        key={ais.mmsi}
-        color="green"
-        width={markerSize}
-        onClick={() => {
-          setTipText(JSON.stringify(ais, null, 2));
-          aisObject[ais.mmsi].pinTooltip = !aisObject[ais.mmsi].pinTooltip;
-        }}
-        onMouseOver={() => {
-          aisObject[ais.mmsi]["hoverTooltip"] = true;
-        }}
-        onMouseOut={() => (aisObject[ais.mmsi]["hoverTooltip"] = false)}
-        anchor={[Number(ais.lat), Number(ais.lon)]}
-      />
-    );
-  });
-
   const listVessels = aisData.map((ais) => {
     if (
       isNaN(Number(ais.lat)) ||
@@ -435,6 +397,8 @@ const MyMap = (props) => {
       />
     );
   });
+
+  const listMarkers = getMarkers(aisData, aisObject, setTipText, markerSize)
 
   const listPreviousPaths = aisData.map((ais) => {
     if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon)) || ais.speed <= 0)
@@ -665,7 +629,6 @@ const MyMap = (props) => {
           {listVessels}
           {listTooltips}
           {listMarkers}
-
           <Overlay anchor={mapCenter} offset={[16, 44]}>
             <img
               className="overlay"

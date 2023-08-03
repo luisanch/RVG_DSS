@@ -1,16 +1,27 @@
-import React from "react";
-import { Map, Marker } from "pigeon-maps";
-import "./Map.css";
+import { Marker } from "pigeon-maps";
 
-const Markers = () => { 
+function getMarkers(aisData, aisObject, setTipText, markerSize) {
+  const markers = aisData.map((ais) => {
+    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
 
-  const coords = [[63.43466, 10.39748],
-    [63.43465, 10.39742]]
-  
-    const listMarkers = coords.map(coord =>
-      <Marker width={50} anchor={coord}/>
+    return (
+      <Marker
+        key={ais.mmsi}
+        color="green"
+        width={markerSize}
+        onClick={() => {
+          setTipText(JSON.stringify(ais, null, 2));
+          aisObject[ais.mmsi].pinTooltip = !aisObject[ais.mmsi].pinTooltip;
+        }}
+        onMouseOver={() => {
+          aisObject[ais.mmsi]["hoverTooltip"] = true;
+        }}
+        onMouseOut={() => (aisObject[ais.mmsi]["hoverTooltip"] = false)}
+        anchor={[Number(ais.lat), Number(ais.lon)]}
+      />
     );
-  return  <Map>{listMarkers}</Map>;
-};
+  });
+  return markers;
+}
 
-export default Markers;
+export default getMarkers;
