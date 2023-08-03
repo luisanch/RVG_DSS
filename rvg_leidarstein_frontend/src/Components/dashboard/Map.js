@@ -10,6 +10,7 @@ import Controls from "./Controls";
 import getManeuverCountdown from "./ManeuverCountdown";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
+import { deg2dec, getGeoCircle, getGeoLine } from "../utils";
 
 const aisObject = {};
 let countdown = -1;
@@ -40,46 +41,6 @@ const MyMap = (props) => {
   const handleZoomLevel = (event) => {
     const scale = event.zoom / (2 * 18);
     setZoomScale(scale);
-  };
-
-  const deg2dec = (coord, direction) => {
-    let dir = 1;
-    if (direction === "S" || direction === "W") dir = -1;
-    let deg = Math.trunc(coord / 100);
-    let dec = (coord / 100 - deg) * (10 / 6);
-    return dir * (deg + dec);
-  };
-
-  const getGeoLine = (points) => {
-    return {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates: points,
-          },
-          properties: { prop0: "value0" },
-        },
-      ],
-    };
-  };
-
-  const getGeoCircle = (geoCircle) => {
-    return {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          geometry: {
-            type: "Polygon",
-            coordinates: geoCircle,
-          },
-          properties: { prop0: "value0" },
-        },
-      ],
-    };
   };
 
   useEffect(() => {
