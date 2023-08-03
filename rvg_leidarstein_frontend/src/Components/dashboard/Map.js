@@ -7,16 +7,9 @@ import getCourses from "./Courses";
 import getTooltips from "./Tooltips";
 import getVessels from "./Vessels";
 import Controls from "./Controls";
+import getManeuverCountdown from "./ManeuverCountdown";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
-
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
 
 const aisObject = {};
 let countdown = -1;
@@ -46,7 +39,6 @@ const MyMap = (props) => {
 
   const handleZoomLevel = (event) => {
     const scale = event.zoom / (2 * 18);
-    // console.log(scale);
     setZoomScale(scale);
   };
 
@@ -171,47 +163,18 @@ const MyMap = (props) => {
     zoomScale
   );
   const listPreviousPaths = getPaths(aisData, getGeoLine);
-
+  const maneuverCountdown = getManeuverCountdown(
+    mapCenter,
+    settings,
+    gunnerusHeading,
+    countdown,
+    cbfTimer
+  );
   const draggable = settings.showDebugOverlay ? (
     <Draggable offset={[900, 450]} anchor={anchor} onDragEnd={setAnchor}>
       <p className="block">{tipText}</p>
     </Draggable>
   ) : null;
-
-  const maneuverCountdown =
-    countdown > 0 ? (
-      <Overlay key={"coundownoverlay"} anchor={mapCenter} offset={[100, -100]}>
-        <TableContainer
-          component={Paper}
-          key={"maneuvercountdowntable"}
-          style={{
-            transform: `rotate(${
-              settings.navigationMode ? gunnerusHeading : 0
-            }deg) `,
-
-            opacity: 0.85,
-          }}
-        >
-          <Table sx={{ maxWidth: 250 }} size="small" aria-label="a dense table">
-            <TableHead>
-              <TableRow>
-                <TableCell align="right">t. remain.</TableCell>
-                <TableCell align="left">unit</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow
-                key={"maneuverCountdownrow"}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell align="right">{cbfTimer}</TableCell>
-                <TableCell align="left">s</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Overlay>
-    ) : null;
 
   return (
     <div className="mapcontainer">
