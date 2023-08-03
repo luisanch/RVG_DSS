@@ -6,6 +6,7 @@ import getPaths from "./Paths";
 import getCourses from "./Courses";
 import getTooltips from "./Tooltips";
 import getVessels from "./Vessels";
+import Controls from "./Controls";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
 
@@ -15,7 +16,6 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Slider from "@mui/material/Slider";
 import Paper from "@mui/material/Paper";
 
 const aisObject = {};
@@ -43,32 +43,6 @@ const MyMap = (props) => {
   const [cbfObject, setCBFObject] = useState([]);
   const [zoomScale, setZoomScale] = useState(1);
   const [cbfTimer, setCbftimer] = useState();
-  const [slider1Value, setSlider1Value] = useState(0);
-  const [slider2Value, setSlider2Value] = useState(0);
-
-  const handleSlider1Change = (event, newValue) => {
-    setSlider1Value(newValue);
-    const message = {
-      type: "datain",
-      content: {
-        message_id: "control_azi",
-        val: newValue,
-      },
-    };
-    sendMessage(JSON.stringify(message, null, 2));
-  };
-
-  const handleSlider2Change = (event, newValue) => {
-    setSlider2Value(newValue);
-    const message = {
-      type: "datain",
-      content: {
-        message_id: "control_thrust",
-        val: newValue,
-      },
-    };
-    sendMessage(JSON.stringify(message, null, 2));
-  };
 
   const handleZoomLevel = (event) => {
     const scale = event.zoom / (2 * 18);
@@ -204,29 +178,6 @@ const MyMap = (props) => {
     </Draggable>
   ) : null;
 
-  const controls = settings.showSimControls ? (
-    <div className="slider-container">
-      <div className="slider-wrapper">
-        <div className="slider-label">Azimuth Angle: {slider1Value}</div>
-        <Slider
-          value={slider1Value}
-          min={-30}
-          max={30}
-          onChange={handleSlider1Change}
-          aria-labelledby="slider1"
-        />
-        <div className="slider-label">Thruster Revs: {slider2Value}</div>
-        <Slider
-          value={slider2Value}
-          min={0}
-          max={300}
-          onChange={handleSlider2Change}
-          aria-labelledby="slider2"
-        />
-      </div>
-    </div>
-  ) : null;
-
   const maneuverCountdown =
     countdown > 0 ? (
       <Overlay key={"coundownoverlay"} anchor={mapCenter} offset={[100, -100]}>
@@ -316,7 +267,7 @@ const MyMap = (props) => {
           {draggable}
         </Map>
       </div>
-      {controls}
+      <Controls settings={settings} sendMessage={sendMessage} />
     </div>
   );
 };
