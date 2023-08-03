@@ -1,26 +1,32 @@
+// Import necessary dependencies
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
-import Sidenav from "./Components/Sidenav";
-import Explore from "./Pages/Explore";
+import Sidenav from "./Components/Sidenav"; 
 import Home from "./Pages/Home";
 import Settings from "./Pages/Settings";
 import Statistics from "./Pages/Statistics";
 import useWebSocket, { ReadyState } from "react-use-websocket";
-import React, { useState, useCallback, useEffect } from "react"; 
+import React, { useState, useCallback, useEffect } from "react";
 
+// WebSocket URL
 const WS_URL = "ws://127.0.0.1:8000";
+// Array to store the received WebSocket messages
 let messageHistory = [];
-// let stampArray = [];
-// let timerStart = Date.now()/1000;
-// let hourtag = 1;
 
+/**
+ * The main application component that handles routing and WebSocket communication.
+ *
+ * @returns {JSX.Element} - A React element containing the main application UI.
+ */
 function App() {
+  // Filters to process WebSocket data
   const nmeaFilters = ["$GPGGA_ext", "$PSIMSNS_ext"];
   const aisFilter = "!AI";
   const colavFilter = "arpa";
   const cbfFilter = "cbf";
   const maxBufferLength = 60;
-  // const saveInterval = 3600;
+
+  // State to manage application settings
   const [settings, setSettings] = useState({
     showHitbox: true,
     showAllTooltips: true,
@@ -31,18 +37,26 @@ function App() {
     simMode: "4dof",
   });
 
+  // WebSocket connection using react-use-websocket hook
   const { sendMessage, lastMessage, readyState } = useWebSocket(WS_URL, {
     share: true,
     filter: isDataIn,
   });
 
+  /**
+   * A callback function to filter WebSocket messages based on the type.
+   *
+   * @param {MessageEvent} message - The WebSocket message event.
+   * @returns {boolean} - True if the message type is "datain", otherwise false.
+   */
   function isDataIn(message) {
     let evt = JSON.parse(message.data);
     return evt.type === "datain";
   }
 
+  // Effect hook to process incoming WebSocket messages
   useEffect(() => {
-    if (lastMessage !== null) {  
+    if (lastMessage !== null) {
       let newMsg = parseDataIn(lastMessage.data);
       if (newMsg === null) return;
       messageHistory.push(newMsg);
@@ -52,8 +66,14 @@ function App() {
     }
   }, [lastMessage, messageHistory]);
 
-  function parseDataIn(msgString) { 
-    const msg = JSON.parse(msgString).content; 
+  /**
+   * Parse the incoming "datain" WebSocket message and apply filters.
+   *
+   * @param {string} msgString - The incoming WebSocket message string.
+   * @returns {object|null} - The parsed message object if it matches the filters, otherwise null.
+   */
+  function parseDataIn(msgString) {
+    const msg = JSON.parse(msgString).content;
 
     if (
       nmeaFilters.includes(msg.message_id) ||
@@ -61,23 +81,13 @@ function App() {
       msg.message_id.includes(colavFilter) ||
       msg.message_id.includes(cbfFilter)
     ) {
-      // const currDate = Date.now() / 1000;
-      // if (currDate > (timerStart + saveInterval)) {
-      //   const logname = "hour" + hourtag + "log"
-      //   localStorage.setItem(logname, JSON.stringify(stampArray, null, 2))
-      //   hourtag++
-      //   stampArray = []
-      //   timerStart = Date.now() / 1000
-      //   console.log("new log saved")
-      // } else {
-      //   stampArray.push(Date.now() / 1000 - msg.unix_time)
-      // }
       return msg;
     } else {
       return null;
     }
   }
 
+  // Connection status text based on the WebSocket connection state
   const connectionStatus = {
     [ReadyState.CONNECTING]: "Connecting",
     [ReadyState.OPEN]: "Open",
@@ -86,11 +96,15 @@ function App() {
     [ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
 
+  // Render the main application UI
   return (
     <div className="App">
+      {/* Sidebar navigation component */}
       <Sidenav />
       <main>
+        {/* React Router for handling different routes */}
         <Routes>
+          {/* Home page */}
           <Route
             path="/"
             element={
@@ -101,7 +115,7 @@ function App() {
               />
             }
           />
-          <Route path="/explore" element={<Explore />} />
+          {/* Statistics page */}
           <Route
             path="/statistics"
             element={
@@ -111,9 +125,16 @@ function App() {
               />
             }
           />
+          {/* Settings page */}
           <Route
             path="/settings"
-            element={<Settings settings={settings} setSettings={setSettings} sendMessage={sendMessage}/>}
+            element={
+              <Settings
+                settings={settings}
+                setSettings={setSettings}
+                sendMessage={sendMessage}
+              />
+            }
           />
         </Routes>
       </main>
