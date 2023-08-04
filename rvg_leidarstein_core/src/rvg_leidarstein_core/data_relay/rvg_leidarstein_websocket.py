@@ -1,8 +1,22 @@
+#!/usr/bin/env python3
+"""
+rvg_leidarstein_websocket.py
+
+Module for handling WebSocket communication with the RVG Leidarstein system.
+"""
 import websocket
 import json
 
 
 class rvg_leidarstein_websocket:
+    """
+    WebSocket class for communication with the RVG Leidarstein system.
+    Parameters:
+    address (str): The address of the WebSocket server to connect to.
+    enable (bool): Flag to enable or disable the WebSocket communication. Default is True.
+    receive_filters (list): List of message IDs to filter when receiving data. Default includes "control_azi","control_thrust", and "data_mode".
+    """
+
     def __init__(
         self,
         address,
@@ -20,13 +34,28 @@ class rvg_leidarstein_websocket:
             self.ws = websocket.create_connection(address)
 
     def send(self, json_msg):
+        """
+        Send a JSON-formatted message over the WebSocket.
+
+        Parameters:
+            json_msg (str): The JSON-formatted message to be sent.
+        """
         if self.enable:
             self.ws.send(json_msg)
 
     def recieve(self):
+        """
+        Receive data from the WebSocket.
+
+        Returns:
+            str: The received data in JSON format.
+        """
         return self.ws.recv()
 
     def start(self):
+        """
+        Start receiving and filtering data from the WebSocket server.
+        """
         self.running = True
 
         while self.running:
@@ -42,6 +71,9 @@ class rvg_leidarstein_websocket:
                         self.received_data[msg_id] = val
 
     def close(self):
+        """
+        Close the WebSocket connection.
+        """
         self.running = False
         if self.enable:
             self.ws.close()
