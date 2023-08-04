@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+
+"""
+This is the 'tcp_datastream_manager' module.
+
+It provides the TCPDatastreamManager class, which is a specialized version of DatastreamManager
+that handles receiving data from a TCP socket connection.
+
+The TCPDatastreamManager inherits from the DatastreamManager class and extends its functionality
+to handle the reception and processing of datastream messages from a TCP socket connection.
+"""
 import socket
 import time
 import select
@@ -19,6 +30,31 @@ class tcp_datastream_manager(datastream_manager):
         prefixFilter=[],
         suffixFilter="",
     ):
+        """
+        TCPDatastreamManager class extends the DatastreamManager class to handle 
+        TCP socket connections.
+
+        The TCPDatastreamManager inherits from the DatastreamManager class and
+        adds functionality to handle receiving datastream messages from a TCP 
+        socket connection.
+
+        Args:
+            address (tuple): The address of the TCP server to connect to, in the form of (host, port).
+            buffer_size (int): The size of the buffer used to receive data from the socket.
+            loop_limit (int): The limit for recursive iteration loops on parsing. Default is 1.
+            verbosity (tuple): A tuple of booleans indicating the verbosity of different log levels.
+                            Default is (False, False, False, False, False).
+            log_stream (tuple): A tuple containing the log file name (str), the time interval (int) in seconds
+                                for writing log data, and a boolean flag for enabling log streaming.
+                                Default is ("datstream_5min.txt", 300, False).
+            socket_timeout (float): The timeout in seconds for socket operations. Default is 5.0 seconds.
+            decrypter (class): The Decrypter class or a subclass to handle decryption of messages.
+                            Default is decrypter (from datastream_managers.decrypter).
+            drop_ais_messages (bool): Whether to drop AIS messages or not. Default is True.
+            prefixFilter (list): A list of message prefixes to filter incoming messages. Default is an empty list.
+            suffixFilter (str): A suffix filter for messages. Default is an empty string.
+        """
+
         self.prefixFilter = prefixFilter
         self.suffixFilter = suffixFilter
         self.extended_msg_suffix = "_ext"
@@ -75,6 +111,25 @@ class tcp_datastream_manager(datastream_manager):
         self._buffer = [None] * self.max_id
 
     def start(self):
+        """
+        Start receiving and processing datastream messages from the TCP socket
+        connection.
+
+        This method begins receiving and processing datastream messages from the 
+        TCP socket connection specified by the 'address' parameter during 
+        initialization.
+
+        If the 'log_stream' parameter was set to True during initialization, the 
+        received messages are also logged to the file specified in the 
+        'log_file_name' parameter. The logging continues for the duration of the
+        'seconds' specified in the 'log_stream' parameter.
+
+        Once the datastream processing or logging duration is complete, 
+        the method will stop and return.
+
+        Returns:
+            None
+        """
         print("TcpDatastreamManager running.")
 
         self._running = True
@@ -102,7 +157,6 @@ class tcp_datastream_manager(datastream_manager):
                 f.close()
                 break
 
-        # ToDo: handle loose ends on terminating process.
         if self._log_stream:
             print("writing done, closing file ", self.log_file_name)
             f.close()

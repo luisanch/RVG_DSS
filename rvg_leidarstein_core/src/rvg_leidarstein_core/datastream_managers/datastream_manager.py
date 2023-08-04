@@ -5,6 +5,22 @@ from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
 
 
 class datastream_manager:
+    """
+    DatastreamManager class manages incoming data streams and processes messages.
+
+    Args:
+        loop_limit (int): The limit for recursive iteration loops on parse. Default is 1.
+        verbosity (tuple): A tuple of booleans representing different verbose levels.
+                           Default is (False, False, False, False, False).
+        log_stream (tuple): A tuple containing log file information. Default is
+                            ("datstream_5min.txt", 300, False).
+        socket_timeout (int): Timeout value for socket operations. Default is 5.
+        decrypter (function): Function used for decryption. Default is the 'decrypter' function.
+        drop_ais_messages (bool): If True, incoming AIS messages will be ignored. Default is True.
+        prefixFilter (list): List of message prefixes used for filtering. Default is an empty list.
+        suffixFilter (str): Message suffix used for filtering. Default is an empty string.
+    """
+
     def __init__(
         self,
         loop_limit=1,
@@ -65,12 +81,31 @@ class datastream_manager:
         self._buffer = [None] * self.max_id
 
     def _is_id_valid(self, msg_id):
+        """
+        Check if the message ID is valid based on the prefixFilter and suffixFilter.
+
+        Args:
+            msg_id (str): The message ID to be checked.
+
+        Returns:
+            bool: True if the message ID is valid, otherwise False.
+        """
         for filter in self.prefixFilter:
             if msg_id.find(filter) == 0 and msg_id.find(self.suffixFilter) != 0:
                 return True
         return False
 
     def pop_parsed_msg_list(self, index=None):
+        """
+        Remove and return the last parsed message from the parsed_msg_list.
+
+        Args:
+            index (int): Optional index to specify which message to pop. If None,
+                         the last message will be removed.
+
+        Returns:
+            None
+        """
         if len(self.parsed_msg_list) < 1:
             return
 
@@ -82,10 +117,29 @@ class datastream_manager:
             return
 
     def stop(self):
+        """
+        Stop the DatastreamManager from running.
+
+        This method sets the internal '_running' flag to False, which will stop any ongoing
+        data processing and message parsing.
+
+        Returns:
+            None
+        """
         self._running = False
         return
 
     def _get_tag(self, raw_msg):
+        """
+        Extract the message tag from a raw message.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+
+        Returns:
+            str: The message tag extracted from the raw message.
+                 If the tag cannot be extracted, it returns "unknown".
+        """
         tag = "unknown"
         decoded_msg = raw_msg.decode(encoding="ascii")
         decoded_msg = decoded_msg.replace(self.eol_separator, "")
@@ -98,6 +152,19 @@ class datastream_manager:
     def _save_individual_tags(
         self, raw_msg, target_list, target_list_name, parsed_message=None, verbose=False
     ):
+        """
+        Save individual tags from the raw message to a target list.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+            target_list (list): The list to which the extracted tags will be saved.
+            target_list_name (str): The name of the target list for identification purposes.
+            parsed_message (object): An optional parsed message object related to the raw_msg.
+            verbose (bool): If True, additional information will be printed to the console.
+
+        Returns:
+            None
+        """
         tag = self._get_tag(raw_msg)
 
         if target_list.count(tag) == 0:
@@ -114,7 +181,19 @@ class datastream_manager:
     def _update_data_object(
         self, parsed_msg, raw_msg, what, verbose=False, metadata=None
     ):
-        # update this when extra information is added to udp message
+        """
+        Update the data object with parsed message and related information.
+
+        Args:
+            parsed_msg (object): The parsed message obtained from the raw message.
+            raw_msg (bytes): The raw message received from the data stream.
+            what (str): Description of the parsed message (e.g., 'GGA', 'VTG', etc.).
+            verbose (bool): If True, additional information will be printed to the console.
+            metadata (object): An optional metadata object associated with the parsed_msg.
+
+        Returns:
+            None
+        """
         tag = self._get_tag(raw_msg)
 
         if not self._is_id_valid(tag):
@@ -133,6 +212,15 @@ class datastream_manager:
         return
 
     def _fix_bad_eol(self, raw_msg):
+        """
+        Fix badly formatted end-of-line characters in the raw message.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+
+        Returns:
+            list: A list of strings with fixed end-of-line characters.
+        """
         parsed_string = raw_msg.decode(encoding="ascii")
 
         # There's probably a better way to handle the bad double backslash
@@ -145,6 +233,15 @@ class datastream_manager:
         return string_list
 
     def _fix_collated_msgs(self, raw_msg):
+        """
+        Fix collated messages in the raw message.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+
+        Returns:
+            list: A list of strings with fixed collated messages.
+        """
         parsed_string = raw_msg.decode(encoding="ascii")
         for begin_identifier in self.msg_begin_identifiers:
             parsed_string = parsed_string.replace(
@@ -155,6 +252,16 @@ class datastream_manager:
         return string_list
 
     def _parse_nmea(self, raw_msg, metadata=None):
+        """
+        Parse an NMEA message from the raw message and update the data object.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+            metadata (object): An optional metadata object associated with the raw_msg.
+
+        Returns:
+            None
+        """
         decoded_msg = raw_msg.decode(encoding="ascii")
         parsed_msg = pynmea2.parse(decoded_msg)
         self._update_data_object(
@@ -169,6 +276,16 @@ class datastream_manager:
         )
 
     def _assemble_ais(self, raw_msg):
+        """
+        Assemble an AIS message from the raw message fragments and decode it.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+
+        Returns:
+            object: The decoded AIS message as an object, or an empty string if the
+                    message fragments are not complete yet.
+        """
         decoded = raw_msg.decode(encoding="ascii")
 
         # check if receiving only one message
@@ -197,6 +314,16 @@ class datastream_manager:
             return full_content
 
     def _parse_ais(self, raw_msg, metadata=None):
+        """
+        Parse an AIS message from the raw message and update the data object.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+            metadata (object): An optional metadata object associated with the raw_msg.
+
+        Returns:
+            None
+        """
         decoded = raw_msg.decode(encoding="ascii")
 
         assert decoded.find(self.talker[0]) == 0 or decoded.find(self.talker[1]) == 0
@@ -222,6 +349,18 @@ class datastream_manager:
             )
 
     def _parse_list(self, raw_msg, list_callback, _loop_count):
+        """
+        Parse a list of messages from the raw message using the specified list_callback.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+            list_callback (function): A callback function that parses the raw_msg
+                                      and returns a list of strings containing messages.
+            _loop_count (int): The current loop count for recursive iteration.
+
+        Returns:
+            int: The updated loop count after parsing the list.
+        """
         assert _loop_count < self._loop_limit
         string_list = list_callback(raw_msg)
         assert len(string_list) > 1
@@ -233,6 +372,22 @@ class datastream_manager:
         return _loop_count
 
     def _parse_message(self, raw_msg, _loop_count=0, metadata=None):
+        """
+        Parse a raw message and attempt to parse it as different message types.
+
+        This method tries to parse the raw message as various message types (NMEA, AIS, etc.),
+        and if parsing fails, it may attempt to decrypt the message or parse it as a list
+        of messages. The method makes multiple attempts to parse the message until it is
+        successfully processed or determined to be invalid.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+            _loop_count (int): The current loop count for recursive iteration. Default is 0.
+            metadata (object): An optional metadata object associated with the raw_msg.
+
+        Returns:
+            None
+        """
         if self._raw_verbose:
             print(raw_msg.decode("ascii"), "\n\n")
         try:
@@ -275,4 +430,13 @@ class datastream_manager:
                                     )
 
     def start(self):
-        print("DatastreamManager Stopped.")
+        """
+        Start the DatastreamManager.
+
+        This method simply prints a message indicating that the DatastreamManager
+        has started.
+
+        Returns:
+            None
+        """
+        print("DatastreamManager Start.")

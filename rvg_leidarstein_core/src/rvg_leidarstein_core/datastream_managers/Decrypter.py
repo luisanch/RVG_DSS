@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+
+""" 
+Handles the decryption of messages using RSA encryption.
+
+The Decrypter class takes an RSA public key, and it can decrypt messages that are encrypted
+using the corresponding private key. It supports assembling fragmented messages and decoding them
+into their original form.
+"""
 from Crypto.PublicKey import RSA
 from base64 import b64decode
 import os
@@ -5,6 +14,16 @@ import re
 
 
 class decrypter:
+    """
+    Decrypter class handles the decryption of messages using RSA encryption.
+
+    Args:
+        key_path (str): The file path to the RSA public key. (Currently unused)
+        talker (str): The talker ID of the encrypted messages. Default is "!U9SEC".
+        field_num (int): The number of fields in the encrypted message. Default is 5.
+        max_id (int): The maximum message ID allowed for assembling fragments. Default is 10.
+    """
+
     def __init__(self, key_path, talker="!U9SEC", field_num=5, max_id=10):
         self.talker = talker
         self.key_path = key_path  # this will go unused until further revision
@@ -19,6 +38,15 @@ e5lCfv/EFRhnka1IlNBFrMrA/LKYsDVy019nGcfoQrv40Eao3XK/AgMBAAE=
         self._field_num = field_num
 
     def _assemble(self, raw_msg):
+        """
+        Assemble a fragmented message from the raw message.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+
+        Returns:
+            str: The assembled message content as a string.
+        """
         decoded = raw_msg.decode(encoding="ascii")
 
         # check if receiving only one message
@@ -46,6 +74,18 @@ e5lCfv/EFRhnka1IlNBFrMrA/LKYsDVy019nGcfoQrv40Eao3XK/AgMBAAE=
             return full_content
 
     def _get_key_cypher(self, full_content):
+        """
+        Extract the RSA public key and the encrypted content from the full content.
+
+        The full content should be in the format: "key_name;cypher_text".
+
+        Args:
+            full_content (str): The full content of the encrypted message.
+
+        Returns:
+            tuple: A tuple containing the RSA public key (as an RSA key object) and
+                   the encrypted content (as bytes).
+        """
         seq = full_content.split(";")
         key_name, content = seq[0], seq[1:]
 
@@ -71,6 +111,17 @@ e5lCfv/EFRhnka1IlNBFrMrA/LKYsDVy019nGcfoQrv40Eao3XK/AgMBAAE=
         return key, cypher
 
     def _clean_message(self, decrypted):
+        """
+        Clean up the decrypted message, extract metadata, and return the metadata 
+        and the message.
+
+        Args:
+            decrypted (bytes): The decrypted message as bytes.
+
+        Returns:
+            tuple: A tuple containing the metadata (unix_time, seq_num, src_id, src_name) 
+            as a tuple and the cleaned message content (as a string or bytes, depending on the message format).
+        """
         decrypted = decrypted.decode("ascii", "backslashreplace")
         decrypted = re.sub(r"([\\][x][a-z0-9]{2})+", "", decrypted)
         decrypted = decrypted[1:]
@@ -93,6 +144,19 @@ e5lCfv/EFRhnka1IlNBFrMrA/LKYsDVy019nGcfoQrv40Eao3XK/AgMBAAE=
         return metadata, msg
 
     def decrypt(self, raw_msg):
+        """
+        Decrypt and clean up the raw message.
+
+        Args:
+            raw_msg (bytes): The raw message received from the data stream.
+
+        Returns:
+            tuple: A tuple containing the metadata (unix_time, seq_num, src_id, src_name)
+            as a tuple and the cleaned message content (as a string or bytes,
+            depending on the message format).
+            If the decryption fails or the message is incomplete, an empty 
+            string is returned.
+        """
         full_content = self._assemble(raw_msg)
         if full_content == "":
             return ""
