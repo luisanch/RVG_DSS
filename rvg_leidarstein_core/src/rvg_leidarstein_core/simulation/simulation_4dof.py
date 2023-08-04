@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+"""
+simulation_4dof.py
+
+This module provides the `simulation_4dof` class, which extends the `simulation_server` 
+class to simulate the movement and behavior of a 4-degrees-of-freedom (4DOF) 
+maneuvering vessel. It uses a mathematical model (`Module_RVGManModel4DOF`)
+to calculate the vessel's position and orientation based on inputs such as speed,
+course, and current conditions. The simulation generates AIS-like messages for
+the maneuvering vessel, and the messages are sent via a WebSocket to be relayed
+to the environment for visualization and collision avoidance. 
+"""
 import math
 from datetime import datetime
 import numpy as np
@@ -10,6 +22,77 @@ from rvg_leidarstein_core.simulation.simulation_server import simulation_server
 
 
 class simulation_4dof(simulation_server):
+    """
+    A class that extends the `simulation_server` to simulate the movement and 
+    behavior of a 4-degrees-of-freedom (4DOF) maneuvering vessel. It utilizes a 
+    mathematical model (`Module_RVGManModel4DOF`) to calculate the vessel's position 
+    and orientation based on inputs such as speed, course, and current conditions. 
+    The simulation generates AIS-like messages for the maneuvering vessel, and these 
+    messages are sent via a WebSocket to be relayed to the environment for visualization
+    and collision avoidance.
+
+    Parameters:
+    ----------
+    websocket : rvg_leidarstein_websocket
+        The WebSocket object used to send AIS-like messages to the environment. 
+        Default is rvg_leidarstein_websocket.
+    serializer : fast_serializer
+        The serializer object used to handle the AIS-like messages for the simulation. 
+        Default is fast_serializer.
+    distance_filter : float, optional
+        The distance threshold used to filter AIS-like messages. Messages with positions 
+        too far from the initial position
+        of the vessel will be ignored. Default is None, meaning no distance filtering.
+    predicted_interval : int, optional
+        The time interval in seconds for predicting the vessel's position. 
+        Default is 30 seconds.
+    colav_manager : colav_manager, optional
+        The colav_manager object used for collision avoidance. Default is colav_manager.
+    filt_order : int, optional
+        The order of the Butterworth filter used for data filtering. Default is 3.
+    filt_cutfreq : float, optional
+        The cutoff frequency of the Butterworth filter. Default is 0.1.
+    filt_nyqfreq : float, optional
+        The Nyquist frequency of the Butterworth filter. Default is 0.5.
+    tmax : int, optional
+        The maximum simulation time in seconds. Default is 1 second.
+    dt : float, optional
+        The time step used in the simulation. Default is 0.1 seconds.
+    rvg_init : dict, optional
+        A dictionary containing initial parameters for the vessel's state. 
+        The dictionary should include the following keys:
+        'lat', 'lat_dir', 'lon', 'lon_dir', 'spd_over_grnd', 'true_course', 
+        'azi_d', 'revs'. Default is an empty dictionary.
+    send_msg_filter : list of str, optional
+        A list of message types to be filtered when sending AIS-like messages. 
+        Only messages with types present in this list will be sent. Default is ['!AI'].
+
+    Attributes:
+    -----------
+    The class has various attributes to store simulation parameters, vessel state, 
+    and history of AIS-like messages. Some of the important attributes include:
+
+    ais_history : dict
+        A dictionary to store the history of AIS-like messages for each vessel.
+    state : numpy.ndarray
+        An 8-element array representing the vessel's state. The elements are 
+        [x, y, z, phi, theta, psi, u, v], where (x, y, z)
+        are position coordinates, (phi, theta, psi) are Euler angles, and (u, v) 
+        are linear velocity components.
+    nu : numpy.ndarray
+        A 4-element array representing the vessel's linear and angular velocities. 
+        The elements are [u, v, p, r], where (u, v) are linear velocities, and 
+        (p, r) are angular velocities.
+    eta : numpy.ndarray
+        A 4-element array representing the vessel's position and orientation. 
+        The elements are [x, y, phi, psi], where (x, y) are position coordinates, 
+        and (phi, psi) are Euler angles.
+    sim_timer : float
+        A timer to keep track of the simulation time.
+    sim_buffer : list
+        A list to store the buffered AIS-like messages for the simulation.
+    """
+
     def __init__(
         self,
         websocket=rvg_leidarstein_websocket,
@@ -64,6 +147,28 @@ class simulation_4dof(simulation_server):
         self.sim_buffer = []
 
     def spoof_gpgga_msg(self, timestamp, lon, lat, alt=12.6):
+        """
+        Generate a spoofed GPGGA NMEA message with the provided timestamp, latitude, 
+        longitude, and altitude.
+
+        Parameters:
+        -----------
+        timestamp : float
+            The timestamp in UNIX time format for the generated message.
+        lon : float
+            The longitude in decimal degrees for the generated message.
+        lat : float
+            The latitude in decimal degrees for the generated message.
+        alt : float, optional
+            The altitude in meters for the generated message. Default is 12.6 meters.
+
+        Returns:
+        --------
+        dict
+            A dictionary representing the spoofed GPGGA message containing various 
+            attributes like latitude, longitude,
+            altitude, etc.
+        """
         lat_ddm, lat_dir = self.transform.dec_2_deg(lat, direction="lat")
         lon_ddm, lon_dir = self.transform.dec_2_deg(lon, direction="lon")
         dtime = datetime.fromtimestamp(timestamp)
@@ -93,6 +198,30 @@ class simulation_4dof(simulation_server):
         return msg
 
     def spoof_gprmc(self, timestamp, lon, lat, speed, course):
+        """
+        Generate a spoofed GPRMC NMEA message with the provided timestamp, latitude, 
+        longitude, speed, and course.
+
+        Parameters:
+        -----------
+        timestamp : float
+            The timestamp in UNIX time format for the generated message.
+        lon : float
+            The longitude in decimal degrees for the generated message.
+        lat : float
+            The latitude in decimal degrees for the generated message.
+        speed : float
+            The speed over ground in meters per second for the generated message.
+        course : float
+            The true course angle in degrees for the generated message.
+
+        Returns:
+        --------
+        dict
+            A dictionary representing the spoofed GPRMC message containing various 
+            attributes like latitude, longitude,
+            speed over ground, true course, etc.
+        """
         lat_ddm, lat_dir = self.transform.dec_2_deg(lat, direction="lat")
         lon_ddm, lon_dir = self.transform.dec_2_deg(lon, direction="lon")
         dtime = datetime.fromtimestamp(timestamp)
@@ -121,6 +250,28 @@ class simulation_4dof(simulation_server):
         return msg
 
     def spoof_psimsns(self, timestamp, roll, yaw, pitch=0):
+        """
+        Generate a spoofed PSIMSNS message with the provided timestamp, roll angle, 
+        yaw angle, and optional pitch angle.
+
+        Parameters:
+        -----------
+        timestamp : float
+            The timestamp in UNIX time format for the generated message.
+        roll : float
+            The roll angle of the vessel in degrees for the generated message.
+        yaw : float
+            The yaw angle of the vessel in degrees for the generated message.
+        pitch : float, optional
+            The pitch angle of the vessel in degrees for the generated message. 
+            Default is 0 degrees.
+
+        Returns:
+        --------
+        dict
+            A dictionary representing the spoofed PSIMSNS message containing various 
+            attributes like roll, yaw, pitch, etc.
+        """
         dtime = datetime.fromtimestamp(timestamp)
         msg = {
             "msg_type": "SNS",
@@ -147,6 +298,23 @@ class simulation_4dof(simulation_server):
         return msg
 
     def convert_simulation(self, x, timestamps):
+        """
+        Convert the simulation results into a list of spoofed messages based on 
+        the provided simulation state 'x' and timestamps.
+
+        Parameters:
+        -----------
+        x : numpy array
+            The simulation state containing the vessel's position, velocity, and 
+            other relevant parameters.
+        timestamps : numpy array
+            An array of timestamps corresponding to each state in the simulation.
+
+        Returns:
+        --------
+        list
+            A list of spoofed messages, including PSIMSNS, GPGGA, and GPRMC messages.
+        """
         out = []
         for i, timestamp in enumerate(timestamps):
             if i % int(len(timestamps) / 2) == 0:
@@ -162,6 +330,18 @@ class simulation_4dof(simulation_server):
         return out
 
     def run_simulation(self):
+        """
+        Run the 4-degree-of-freedom (4DOF) simulation.
+
+        Returns:
+        --------
+        tuple
+            A tuple containing two elements:
+            1. numpy array: A 2D array containing the simulation results (vessel's 
+                position, velocity, etc.) over time.
+            2. numpy array: An array of timestamps corresponding to each state in 
+                the simulation.
+        """
         tvec = np.linspace(0, self.tmax, int(self.tmax / self.dt) + 1)
 
         # dict containing simulation param
@@ -195,12 +375,44 @@ class simulation_4dof(simulation_server):
         return out, timestamps
 
     def check_incoming_controls(self):
+        """
+        Check for incoming control data from the websocket and update the vessel's 
+        azimuth angle and thrust values accordingly.
+
+        This method checks for the presence of "control_azi" and "control_thrust" 
+        keys in the received_data dictionary of the websocket. If these keys are 
+        present, it updates the vessel's azimuth angle (self.azi) and thrust value 
+        (self.revs) with the corresponding values received from the websocket.
+
+        Returns:
+        --------
+        None
+        """
         if "control_azi" in self.websocket.received_data:
             self.azi = self.websocket.received_data["control_azi"]
         if "control_thrust" in self.websocket.received_data:
             self.revs = self.websocket.received_data["control_thrust"]
 
     def start(self):
+        """
+        Start the simulation.
+
+        This method runs the main loop of the simulation. While the simulation is 
+        running, it continuously checks for incoming control data from the websocket 
+        using the `check_incoming_controls` method. If there is data in the buffer, 
+        it checks whether it matches any of the filters specified in `_send_msg_filter`. 
+        If a match is found, it sends the data using the `_send` method and removes 
+        it from the buffer. It also runs the 4-degree-of-freedom simulation using the 
+        `run_simulation` method and converts the results to spoofed messages using 
+        the `convert_simulation` method. The simulation results are stored in the 
+        `sim_buffer`. When the simulation time exceeds the maximum time (tmax), 
+        the next set of 4DOF simulation data is sent using `_send` method from the 
+        `sim_buffer` based on their timestamps.
+
+        Returns:
+        --------
+        None
+        """
         self._running = True
         print("Simulation 4DOF Client running...")
 

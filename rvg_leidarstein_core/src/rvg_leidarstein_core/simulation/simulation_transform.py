@@ -1,9 +1,49 @@
+#!/usr/bin/env python3
+"""
+Module: simulation_transform
+
+Description:
+This module contains the SimulationTransform class, which provides various methods 
+to transform coordinates and units commonly used in simulations.
+
+Classes:
+- SimulationTransform: A class for coordinate and unit transformations used in simulations.
+"""
 import pandas as pd
 import math
 import pymap3d as pm
 
 
 class simulation_transform:
+    """
+    A class for coordinate and unit transformations used in simulations.
+
+    Methods:
+    - deg_2_dec: Convert coordinates from degrees, minutes, and decimals to decimal degrees.
+    - dec_2_deg: Convert coordinates from decimal degrees to degrees, minutes, and decimals.
+    - coords_to_xyz: Convert coordinates (latitude, longitude, altitude) to XYZ (East-North-Up)
+                     relative to a specified origin.
+    - xyz_to_coords: Convert XYZ (East-North-Up) coordinates relative to a specified origin
+                     back to geodetic coordinates (latitude, longitude).
+    - kn_to_nms: Convert speed from knots to nautical miles per second.
+    - nm_to_deg: Convert distance from nautical miles to degrees of latitude or longitude.
+    - m_to_nm: Convert distance from meters to nautical miles.
+    - mps_to_kn: Convert speed from meters per second to knots.
+    - kn_to_mps: Convert speed from knots to meters per second.
+
+    Attributes:
+    - gps_data: DataFrame to store GPS data.
+    - attitude_data: DataFrame to store attitude data.
+    - nm_in_deg: Conversion factor from nautical miles to degrees of latitude or longitude.
+    - m_in_nm: Conversion factor from meters to nautical miles.
+    - mps_in_kn: Conversion factor from meters per second to knots.
+
+    Dependencies:
+    - pandas: For handling data in DataFrames.
+    - math: For mathematical operations.
+    - pymap3d: For geodetic and ENU coordinate transformations.
+    """
+
     def __init__(self):
         self.gps_data = pd.DataFrame()
         self.attitude_data = pd.DataFrame()
