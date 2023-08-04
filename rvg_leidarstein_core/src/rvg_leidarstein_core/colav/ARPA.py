@@ -1,3 +1,13 @@
+#!/usr/bin/env python3
+
+"""
+Module: arpa
+
+This module contains the 'arpa' class, which provides functionality for processing
+AIS (Automatic Identification System) data to calculate the Closest Point of Approach (CPA)
+and safety parameters for vessels in proximity to a reference vessel.
+"""
+
 import math
 import numpy as np
 from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
@@ -5,6 +15,11 @@ import copy
 
 
 class arpa:
+    """
+    The 'arpa' class is used to process AIS data and calculate the Closest Point of Approach (CPA)
+    and safety parameters for vessels in proximity to a reference vessel.
+    """
+
     def __init__(
         self,
         safety_radius_m,
@@ -13,6 +28,16 @@ class arpa:
         transform=simulation_transform(),
         gunnerus_mmsi="",
     ):
+        """
+        Initialize the ARPA object with the specified parameters.
+
+        Parameters:
+            safety_radius_m (float): Safety radius in meters.
+            safety_radius_tol (float, optional): Safety radius tolerance factor. Default is 1.5.
+            max_d_2_cpa (float, optional): Maximum distance to consider for CPA calculation. Default is 2000 meters.
+            transform (object, optional): Object for coordinate transformations. Default is simulation_transform().
+            gunnerus_mmsi (str, optional): MMSI (Maritime Mobile Service Identity) of the reference vessel. Default is an empty string.
+        """
         self._gunnerus_mmsi = gunnerus_mmsi
         self._gunnerus_data = {}
         self._ais_data = {}
@@ -24,26 +49,68 @@ class arpa:
         pass
 
     def stop(self):
+        """
+        Stop the processing of ARPA data.
+        """
         self._running = False
 
     def update_gunnerus_data(self, data):
+        """
+        Update the data for the reference vessel (Gunnerus).
+
+        Parameters:
+            data (dict): Dictionary containing data for the reference vessel.
+        """
         self._gunnerus_data = data
 
     def update_ais_data(self, data):
+        """
+        Update the AIS data.
+
+        Parameters:
+            data (dict): Dictionary containing AIS data with MMSI as keys.
+        """
         self._ais_data = data
 
     def _has_coords(self, message):
+        """
+        Check if the message contains latitude and longitude coordinates.
+
+        Parameters:
+            message (dict): Dictionary containing message data.
+
+        Returns:
+            bool: True if latitude and longitude are present, False otherwise.
+        """
         msg_keys = message.keys()
         has_data = "lat" in msg_keys and "lon" in msg_keys
         return has_data
 
     def _has_course(self, message):
+        """
+        Check if the message contains course and speed data.
+
+        Parameters:
+            message (dict): Dictionary containing message data.
+
+        Returns:
+            bool: True if course and speed are present, False otherwise.
+        """
         msg_keys = message.keys()
         has_data = "course" in msg_keys and "speed" in msg_keys
         return has_data
 
-    # extract AIS parameters for ARPA
     def _get_ais_data(self, ais_message, gunnerus_data):
+        """
+        Extract AIS parameters for ARPA.
+
+        Parameters:
+            ais_message (dict): Dictionary containing AIS message data.
+            gunnerus_data (dict): Dictionary containing data for the reference vessel (Gunnerus).
+
+        Returns:
+            dict or None: Dictionary containing extracted AIS parameters if AIS data is valid, None otherwise.
+        """
         ais_has_coords = self._has_coords(ais_message)
         lon, lat, course, speed_kn = (None, None, None, None)
 
@@ -90,8 +157,14 @@ class arpa:
             return ais_data
         return None
 
-    # extract gunnerus parameters for ARPA
     def _get_gunnerus_data(self):
+        """
+        Extract Gunnerus parameters for ARPA.
+
+        Returns:
+            dict or None: Dictionary containing extracted Gunnerus parameters if 
+            Gunnerus data is valid, None otherwise.
+        """
         gunn_speed = None
         gunn_course = None
 
@@ -141,8 +214,19 @@ class arpa:
         }
         return gunn_data
 
-    # get cpa for an ais vessel, ais has to be pre processed
     def _get_cpa(self, gunn_data, ais_data_item):
+        """
+        Calculate Closest Point of Approach (CPA) for an AIS vessel.
+
+        Parameters:
+            gunn_data (dict): Dictionary containing data for the reference 
+            vessel (Gunnerus).
+            ais_data_item (dict): Dictionary containing extracted AIS parameters.
+
+        Returns:
+            dict or None: Dictionary containing CPA data if CPA is valid, None 
+            otherwise.
+        """
         ux = float(gunn_data["ux"])
         uy = float(gunn_data["uy"])
         p = gunn_data["p"]
@@ -185,8 +269,19 @@ class arpa:
 
         return cpa
 
-    # get safety params for an ais vessel, ais has to be pre processed
     def _get_safety_params(self, gunn_data, ais_data_item):
+        """
+        Calculate safety parameters for an AIS vessel.
+
+        Parameters:
+            gunn_data (dict): Dictionary containing data for the reference
+            vessel (Gunnerus).
+            ais_data_item (dict): Dictionary containing extracted AIS parameters.
+
+        Returns:
+            dict or None: Dictionary containing safety parameters if vessel is 
+            within safety radius, None otherwise.
+        """
         ux = float(gunn_data["ux"])
         uy = float(gunn_data["uy"])
         p = gunn_data["p"]
@@ -279,6 +374,13 @@ class arpa:
         return safety_params
 
     def _process_data(self):
+        """
+        Process the AIS data to calculate CPA and safety parameters for vessels.
+
+        Returns:
+            tuple or None: Tuple containing Gunnerus data and processed AIS data
+            if valid, None otherwise.
+        """
         self._running = True
         processed_data = []
         gunn_data = self._get_gunnerus_data()
@@ -319,6 +421,17 @@ class arpa:
         return gunn_data, processed_data
 
     def convert_arpa_params(self, arpa_data, gunn_data):
+        """
+        Convert ARPA data from XYZ coordinates to latitude and longitude.
+
+        Parameters:
+            arpa_data (dict): Dictionary containing ARPA data with MMSI as keys.
+            gunn_data (dict): Dictionary containing data for the reference vessel 
+            (Gunnerus).
+
+        Returns:
+            dict: Dictionary containing converted ARPA parameters.
+        """
         lon = gunn_data["lon"]
         lat = gunn_data["lat"]
         course = gunn_data["course"]
@@ -381,5 +494,11 @@ class arpa:
         return converted_data
 
     def get_ARPA_parameters(self):
+        """
+        Get ARPA parameters by processing the AIS data.
+
+        Returns:
+            tuple: Tuple containing Gunnerus data and processed AIS data.
+        """
         gunn_data, processed_data = self._process_data()
         return gunn_data, processed_data

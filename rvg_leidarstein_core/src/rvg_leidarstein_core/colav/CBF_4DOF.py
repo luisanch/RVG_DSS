@@ -1,3 +1,13 @@
+#!/usr/bin/env python3
+
+"""
+Module: cbf_4dof
+
+This module contains the 'cbf_4dof' class, which is a subclass of the 'cbf' 
+class and provides control barrier function functionality for a 
+four-degree-of-freedom (4DOF) system.
+"""
+
 import math
 import numpy as np
 from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
@@ -8,6 +18,10 @@ from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
 
 
 class cbf_4dof(cbf):
+    """
+    The 'cbf_4dof' class is a subclass of the 'cbf' class and provides control
+    barrier functionality for a four-degree-of-freedom (4DOF) system.
+    """
     def __init__(
         self,
         safety_radius_m,
@@ -19,11 +33,27 @@ class cbf_4dof(cbf):
         gamma_2=40,
         gamma_1=0.2,
         t_tot=600,
-        rd_max=1,
-        n_ub=20,
+        rd_max=1, 
         max_rd=0.18,
         transform=simulation_transform(),
     ):
+        """
+        Initialize the cbf_4dof object with the specified parameters.
+
+        Parameters:
+            safety_radius_m (float): Safety radius in meters.
+            k1 (float, optional): CBF parameter k1. Default is 1.
+            k2 (float, optional): CBF parameter k2. Default is 1.
+            k3 (float, optional): CBF parameter k3. Default is 1.
+            lam (float, optional): CBF parameter lambda. Default is 0.5.
+            dt (float, optional): Time step for control barrier function calculation. Default is 0.2 seconds.
+            gamma_2 (float, optional): CBF parameter gamma_2. Default is 40.
+            gamma_1 (float, optional): CBF parameter gamma_1. Default is 0.2.
+            t_tot (float, optional): Total time for CBF calculation. Default is 600 seconds.
+            rd_max (float, optional): Maximum value for nominal control rd. Default is 1. 
+            max_rd (float, optional): Maximum value for rd. Default is 0.18.
+            transform (object, optional): Object for coordinate transformations. Default is simulation_transform().
+        """
         super(cbf_4dof, self).__init__(
             safety_radius_m,
             k1=1,
@@ -32,8 +62,7 @@ class cbf_4dof(cbf):
             gamma_2=40,
             gamma_1=0.2,
             t_tot=600,
-            rd_max=1,
-            n_ub=20,
+            rd_max=1, 
             max_rd=0.18,
             transform=simulation_transform(),
         )
@@ -46,11 +75,33 @@ class cbf_4dof(cbf):
         self._rvg_origo = {}
 
     def infer_azi_revs(self, u, r):
+        """
+        Infer azimuth angle and revolutions for the control barrier function.
+
+        Parameters:
+            u (float): Surge velocity.
+            r (float): Yaw rate.
+
+        Returns:
+            tuple: Tuple containing azimuth angle and revolutions.
+        """
+
         revs = 100  # u*5.14/300 # revs assuming linear behavior, should replace this
         azi = 0
         return azi, revs
 
     def _get_azi(self, r, r_safe, p_azi):
+        """
+        Calculate azimuth angle for the control barrier function.
+
+        Parameters:
+            r (float): Yaw rate.
+            r_safe (float): Safe distance for yaw rate.
+            p_azi (float): Previous azimuth angle.
+
+        Returns:
+            float: Calculated azimuth angle.
+        """
         ad = -self.k2 * (r - r_safe) + self.k3 * r_safe
         ad = float(ad[0])
         if abs(p_azi - ad) > self._max_azi_d:
@@ -64,6 +115,22 @@ class cbf_4dof(cbf):
         return ad
 
     def _process_data(self, p, u, z, tq, po, zo, uo, ret_var):
+        """
+        Process the data for control barrier function calculation.
+
+        Parameters:
+            p (np.array): Array containing position data.
+            u (float): Surge velocity.
+            z (np.array): Vector containing orientation.
+            tq (np.array): Vector containing desired orientation.
+            po (np.array): Array containing position of other vessels.
+            zo (np.array): Array containing direction of other vessels.
+            uo (np.array): Array containing surge velocity of other vessels.
+            ret_var (object): Return variable.
+
+        Returns:
+            dict: Dictionary containing processed control barrier function data.
+        """
         self._running = True
         start_time = time()
         maneuver_start = None
