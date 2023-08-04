@@ -1,3 +1,21 @@
+#!/usr/bin/env python3
+
+"""
+core.py
+
+This module contains the core class responsible for managing datastream, 
+serializer, and simulation manager. It initializes and starts these components 
+in separate threads.
+
+Attributes:
+-----------
+- colav_manager: colav_manager
+    The instance of the COLAV manager.
+- websocket: rvg_leidarstein_websocket
+    The instance of the WebSocket used for communication.
+- log_file: str, optional
+    The path to a log file if a log file should be used as the data source.
+"""
 from threading import Thread
 import pathlib
 import os
@@ -12,13 +30,46 @@ from rvg_leidarstein_core.datastream_managers.log_datastream_manager import (
 from rvg_leidarstein_core.serializers.fast_serializer import fast_serializer
 from rvg_leidarstein_core.colav.colav_manager import colav_manager
 from rvg_leidarstein_core.simulation.simulation_manager import simulation_manager
-from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import (
+    rvg_leidarstein_websocket,
+)
 from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
 
 
 class core:
+    """
+    Core class for managing datastream, serializer, and simulation manager.
+
+    This class is responsible for initializing and managing the datastream,
+    serializer, and simulation manager. It also starts and stops the different
+    components in separate threads.
+
+    Parameters:
+    -----------
+    colav_manager : colav_manager
+        The instance of the COLAV manager.
+    websocket : rvg_leidarstein_websocket
+        The instance of the WebSocket used for communication.
+    log_file : str, optional
+        The path to a log file if a log file should be used as the data source.
+
+    Attributes:
+    -----------
+    (See __init__ method for attribute descriptions.)
+
+    Methods:
+    --------
+    start() : None
+        Start the datastream, serializer, and simulation manager in separate threads.
+    stop() : None
+        Stop the datastream, serializer, and simulation manager, and close the WebSocket.
+    """
+
     def __init__(
-        self, colav_manager=colav_manager, websocket=rvg_leidarstein_websocket, log_file=None
+        self,
+        colav_manager=colav_manager,
+        websocket=rvg_leidarstein_websocket,
+        log_file=None,
     ):
         # Todo: add flush() functionality across related classes to purge data
         # and prevent stack overflow / slowdown over extended use
@@ -183,7 +234,9 @@ class core:
                 self.simulation_manager.mode_replay
             )
         elif self.run_4DOF_sim:
-            self.simulation_manager.set_simulation_type(self.simulation_manager.mode_4dof)
+            self.simulation_manager.set_simulation_type(
+                self.simulation_manager.mode_4dof
+            )
         else:
             self.simulation_manager.set_simulation_type(self.simulation_manager.mode_rt)
 
