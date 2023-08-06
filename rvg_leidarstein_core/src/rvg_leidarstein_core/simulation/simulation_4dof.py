@@ -418,7 +418,7 @@ class simulation_4dof(simulation_server):
 
         while self._running:
             self.check_incoming_controls()
-            if len(self._buffer):  # check if rt data should be sent
+            if len(self._buffer):  # check if rt data should be sent 
                 for filter in self._send_msg_filter:
                     if self._buffer[0]["message_id"].find(filter) == 0:
                         self._send(self._buffer[0])

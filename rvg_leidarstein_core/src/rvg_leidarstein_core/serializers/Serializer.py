@@ -24,11 +24,11 @@ class sorted_data(object):
 
 class serializer:
     """
-    Serializer class handles the serialization of datastream messages into pandas 
+    Serializer class handles the serialization of datastream messages into pandas
     DataFrames.
 
-    The Serializer takes a DatastreamManager instance as input and processes the 
-    parsed messages received from the datastream. It provides options to save the 
+    The Serializer takes a DatastreamManager instance as input and processes the
+    parsed messages received from the datastream. It provides options to save the
     headers of the DataFrame and the DataFrame itself to separate CSV files.
 
     Args:
@@ -49,6 +49,7 @@ class serializer:
         metadata_atr_names (tuple): A tuple containing the attribute names for metadata information: unix_time, seq_num,
                                     src_id, and src_name.
     """
+
     def __init__(
         self,
         datastream_manager,
@@ -58,7 +59,6 @@ class serializer:
         overwrite_headers=False,
         verbose=False,
     ):
-
         # attribute aliases for incoming messages
         self.df_aliases = df_aliases
 
@@ -95,9 +95,11 @@ class serializer:
             nmea_object (pynmea2.ParsedLine): The parsed NMEA message object.
 
         Returns:
-            tuple: A tuple containing three lists: 'msg_atr' (attribute names), 'msg_values' (attribute values),
-                   and 'unknown_msg_data' (additional data fields not defined in the NMEA message format).
+            tuple: A tuple containing three lists: 'msg_atr' (attribute names),
+            'msg_values' (attribute values), and 'unknown_msg_data' (additional
+            data fields not defined in the NMEA message format).
         """
+
         t = type(nmea_object)
         msg_values = []
         msg_atr = []
@@ -118,17 +120,19 @@ class serializer:
         Get attributes and values from a parsed AIS message object.
 
         This method takes a parsed AIS message object and extracts its attributes
-        and values. The attributes and values are stored in the 'msg_atr' and 
-        'msg_values' lists, respectively. Additionally, the MMSI (Maritime Mobile Service Identity) 
-        attribute is extracted separately from the AIS message object and included 
-        in the 'msg_atr' and 'msg_values' lists.
+        and values. The attributes and values are stored in the 'msg_atr' and
+        'msg_values' lists, respectively. Additionally, the MMSI (Maritime Mobile
+        Service Identity) attribute is extracted separately from the AIS message
+        object and included in the 'msg_atr' and 'msg_values' lists.
 
         Args:
-            ais_object (dict): The parsed AIS message object obtained from the 'ais_decode' function.
+            ais_object (dict): The parsed AIS message object obtained from the
+            'ais_decode' function.
 
         Returns:
-            tuple: A tuple containing four lists: 'msg_atr' (attribute names), 'msg_values' (attribute values),
-                   an empty list (as there are no unknown attributes for AIS messages), and 'mmsi' (MMSI attribute value).
+            tuple: A tuple containing four lists: 'msg_atr' (attribute names),
+            'msg_values' (attribute values), an empty list (as there are no unknown
+            attributes for AIS messages), and 'mmsi' (MMSI attribute value).
         """
         ais_dict = ais_object.asdict()
         msg_values = list(ais_dict.values())
@@ -139,17 +143,17 @@ class serializer:
 
     def _load_headers(self):
         """
-        Load DataFrame headers from CSV files.
+        Load DataFrame headers from pkl files.
 
-        This method loads DataFrame headers from .pkl files located in the 
+        This method loads DataFrame headers from .pkl files located in the
         directory specified by 'save_headers' during the class initialization.
         The .pkl files should contain the headers (column names) of the DataFrames
-        that will be created during serialization. The headers are loaded into 
-        DataFrame objects and stored as attributes in the 'sorted_data' object. 
+        that will be created during serialization. The headers are loaded into
+        DataFrame objects and stored as attributes in the 'sorted_data' object.
         The attribute names are based on the names of the messages received.
 
         Note:
-            This method is automatically called during class initialization unless 
+            This method is automatically called during class initialization unless
             'overwrite_headers' is set to True.
 
         Returns:
@@ -191,9 +195,9 @@ class serializer:
         """
         Start the serializer.
 
-        This method sets the '_running' flag to True, enabling the serialization 
-        process to start. The serializer will begin processing the parsed messages 
-        received from the datastream manager and create DataFrames according to 
+        This method sets the '_running' flag to True, enabling the serialization
+        process to start. The serializer will begin processing the parsed messages
+        received from the datastream manager and create DataFrames according to
         the DataFrame aliases provided during class initialization.
 
         Returns:
