@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from simple_websocket_server import WebSocketServer, WebSocket
 
 
