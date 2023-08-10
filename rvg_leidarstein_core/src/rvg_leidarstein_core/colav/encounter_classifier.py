@@ -11,7 +11,7 @@ class encounter_classifier:
         self._theta_1 = theta_1
         self._theta_2 = theta_2
         self._dsm = encounter_classifier_dsm()
-        self.encounter = encounter_classifier_dsm.current_state
+        self.encounter = self._dsm.current_state
         self._sector_arcs = [
             2 * theta_1,
             theta_2 - theta_1,
@@ -163,13 +163,13 @@ class encounter_classifier:
                     encounter = encounter[2]
         return encounter
 
-    def get_encounter_type(self, rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts):
+    def get_encounter_type(
+        self, rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts, d_at_cpa, t_2_cpa
+    ):
         encounter = self.classify_encounter(
             rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts
         )
-        v_os = (v_rvg * cos(rvg_course), v_rvg * sin(rvg_course))
-        v_ts = (v_ts * cos(ts_course), v_ts * sin(ts_course))
-        p = np.array([[e], [n]])
-        self._dsm.update(encounter, e_ts, n_ts, v_ts[0], v_ts[1], p, v_os[0], v_os[1])
-        self.encounter = encounter_classifier_dsm.current_state  # maybe not necessary
+        self._dsm.update(encounter, d_at_cpa, t_2_cpa)
+        self.encounter = self._dsm.current_state  # maybe not necessary
+        print(self.encounter)
         return self.encounter.id, self.encounter.value

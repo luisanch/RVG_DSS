@@ -10,7 +10,7 @@ import Controls from "./Controls";
 import getManeuverCountdown from "./ManeuverCountdown";
 import "./Map.css";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
-import { deg2dec, getGeoCircle, getGeoLine } from "../utils";
+import { deg2dec, getGeoLine } from "../utils";
 
 // Define a blank object to store AIS data and other variables
 const aisObject = {};
@@ -32,6 +32,7 @@ const MyMap = (props) => {
   const [mapCenter, setMapCenter] = useState([63.43463, 10.39744]);
   const [gunnerusHeading, setGunnerusHeading] = useState(0);
   const [aisData, setAisData] = useState([]);
+  const [encounterData, setEncounterData] = useState([]);
   const [anchor, setAnchor] = useState([63.43463, 10.39744]);
   const [tipText, setTipText] = useState("");
   const [arpaObject, setArpaObject] = useState([]);
@@ -95,6 +96,10 @@ const MyMap = (props) => {
       setAisObjectData(data);
     }
 
+    if (data.message_id === "encounters") {
+      setEncounterData(data.data);
+    }
+
     if (data.message_id.indexOf("arpa") === 0) {
       cleanupCountdownARPA = cleanupInterval;
       setArpaObject(data.data);
@@ -128,6 +133,7 @@ const MyMap = (props) => {
     aisData,
     aisObject,
     arpaObject,
+    encounterData,
     settings,
     gunnerusHeading
   );
@@ -194,7 +200,6 @@ const MyMap = (props) => {
           {listVessels}
           {listTooltips}
           {listMarkers}
-
           {/* Draw Gunnerus ship asset*/}
           <Overlay anchor={mapCenter} offset={[16, 44]}>
             <img
