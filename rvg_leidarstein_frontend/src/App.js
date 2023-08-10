@@ -1,7 +1,7 @@
 // Import necessary dependencies
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./App.css";
-import Sidenav from "./Components/Sidenav"; 
+import Sidenav from "./Components/Sidenav";
 import Home from "./Pages/Home";
 import Settings from "./Pages/Settings";
 import Statistics from "./Pages/Statistics";
@@ -24,13 +24,14 @@ function App() {
   const aisFilter = "!AI";
   const colavFilter = "arpa";
   const cbfFilter = "cbf";
+  const encounterFilter = "encounters";
   const maxBufferLength = 60;
 
   // State to manage application settings
   const [settings, setSettings] = useState({
     showHitbox: true,
     showAllTooltips: true,
-    shortTooltips: true, 
+    shortTooltips: true,
     navigationMode: false,
     showSimControls: false,
     simMode: "4dof",
@@ -78,7 +79,8 @@ function App() {
       nmeaFilters.includes(msg.message_id) ||
       (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext")) ||
       msg.message_id.includes(colavFilter) ||
-      msg.message_id.includes(cbfFilter)
+      msg.message_id.includes(cbfFilter) ||
+      msg.message_id.includes(encounterFilter)
     ) {
       return msg;
     } else {

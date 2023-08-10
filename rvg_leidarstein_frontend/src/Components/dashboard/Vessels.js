@@ -19,7 +19,6 @@ function getVessels(aisData, zoomScale) {
       !ais.hasOwnProperty("speed")
     )
       return null;
-
     // Function to determine the heading (rotation) of the vessel icon
     function rotate_heading(ais_in) {
       if (ais_in.heading) {

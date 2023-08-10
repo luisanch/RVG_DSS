@@ -13,6 +13,7 @@ function getTooltips(
   aisData,
   aisObject,
   arpaObject,
+  encounterData,
   settings,
   gunnerusHeading
 ) {
@@ -69,6 +70,33 @@ function getTooltips(
         ? Number(arpaObject[ais.mmsi]["d_2_r"]).toFixed(2)
         : "--";
 
+      let encounter = "--";
+
+      if (encounterData.hasOwnProperty(ais.mmsi)) {
+        switch (encounterData[ais.mmsi]) {
+          case 1:
+            encounter = "Safe";
+            break;
+          case 2:
+            encounter = "Otk. Star";
+            break;
+          case 3:
+            encounter = "Otk. Port";
+            break;
+          case 4:
+            encounter = "Head On";
+            break;
+          case 5:
+            encounter = "Give Way";
+            break;
+          case 6:
+            encounter = "Stand On";
+            break;
+          default:
+            encounter = "--";
+        }
+      }
+
       // Function to create data objects for the tooltip table
       function createData(parameter, value, unit) {
         return { parameter, value, unit };
@@ -77,6 +105,7 @@ function getTooltips(
       // Define rows for the tooltip table based on settings
       const rows = settings.shortTooltips
         ? [
+            createData("Ectr.", encounter, "t"),
             createData("T2CPA", formatString(t2cpa), "s"),
             createData("D2CPA", formatString(d2cpa), "m"),
             createData("D@CPA", formatString(dAtcpa), "m"),
@@ -85,6 +114,7 @@ function getTooltips(
           ]
         : [
             createData("MMSI", mmsi, "#"),
+            createData("Encounter", encounter, "t"),
             createData("Longitude", lon, "DD"),
             createData("Latitude", lat, "DD"),
             createData("Course", course, "°"),

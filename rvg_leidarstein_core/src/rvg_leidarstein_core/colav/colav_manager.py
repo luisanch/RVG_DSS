@@ -13,6 +13,7 @@ from rvg_leidarstein_core.simulation.simulation_transform import simulation_tran
 from .ARPA import arpa
 from .CBF import cbf
 from .CBF_4DOF import cbf_4dof
+from .encounter_classifier import encounter_classifier
 import json
 import time
 import time
@@ -35,7 +36,7 @@ class colav_manager:
         prediction_t=600,
     ):
         """
-        Collision Avoidance (COLAV) manager responsible for coordinating the ARPA 
+        Collision Avoidance (COLAV) manager responsible for coordinating the ARPA
         (Automatic Radar Plotting Aid) and the control barrier function (CBF)
         modules.
 
@@ -60,6 +61,7 @@ class colav_manager:
         self._cbf_type = cbf_type
         self._cbf_message_id = "cbf"
         self._arpa_message_id = "arpa"
+        self._encounters_message_id = "encounters"
         self._gunnerus_data = {}
         self._ais_data = {}
         self.websocket = websocket
@@ -79,6 +81,7 @@ class colav_manager:
         self.dummy_vessel = dummy_vessel
         self.print_c_time = print_comp_t
         self.prediction_t = prediction_t
+        self._encounter_classifiers = {}
 
         self._arpa = arpa(
             safety_radius_m=self._safety_radius_m,
@@ -102,6 +105,35 @@ class colav_manager:
                 transform=self._transform,
                 t_tot=self.prediction_t,
             )
+
+    def compose_encounters_message(self):
+        vessel_ids = self._encounter_classifiers.keys()
+        encounters = {}
+        for mmsi in vessel_ids:
+            encounters[mmsi] = self._encounter_classifiers[mmsi].encounter.value
+        json = self._compose_colav_msg(encounters, self._encounters_message_id)
+        print(json)
+        return json
+
+    def _update_encounter_classifiers(self, rvg_data, ais_data):
+        # initialize classifiers
+        for ais in ais_data:
+            if ais["mmsi"] not in self._encounter_classifiers:
+                self._encounter_classifiers[ais["mmsi"]] = encounter_classifier()
+
+            if ais["mmsi"] in self._encounter_classifiers:
+                self._encounter_classifiers[ais["mmsi"]].get_encounter_type(
+                    rvg_data["course"],
+                    ais["course"],
+                    0,
+                    ais["po_x"],
+                    0,
+                    ais["po_y"],
+                    rvg_data["u"],
+                    ais["uo"],
+                    ais["cpa"]["d_at_cpa"],
+                    ais["cpa"]["t_2_cpa"],
+                )
 
     def sort_cbf_data(self):
         """
@@ -198,13 +230,16 @@ class colav_manager:
         self._arpa.update_ais_data(self._ais_data)
         arpa_gunn_data, arpa_data = self._arpa.get_ARPA_parameters()
         data_is_available = arpa_data and arpa_gunn_data
+
         if data_is_available:
+            self._update_encounter_classifiers(arpa_gunn_data, arpa_data)
             converted_arpa_data = self._arpa.convert_arpa_params(
                 arpa_data, arpa_gunn_data
             )
             self.websocket.send(
                 self._compose_colav_msg(converted_arpa_data, self._arpa_message_id)
             )
+            self.websocket.send(self.compose_encounters_message())
             self._cbf.update_cbf_data(arpa_gunn_data, arpa_data)
         return data_is_available
 
