@@ -1,22 +1,37 @@
-
-
-from math import atan2, pi, cos, sin
+from math import atan2, pi, cos, sin, atan
 import numpy as np
 from .encounter_classifier_dsm import encounter_classifier_dsm
 from .enums import Encounters, Range_Situation
 
 
 class encounter_classifier:
-    def __init__(self, theta_1=(20 * pi / 180), theta_2=(120 * pi / 180)):
-        self._theta_1 = theta_1
+    def __init__(
+        self,
+        _theta_1=np.deg2rad(20),
+        theta_2=np.deg2rad(120),
+        d_enter_up_cpa=150,
+        t_enter_up_cpa=300,
+        t_enter_low_cpa=0,
+        d_exit_low_cpa=250,
+        t_exit_low_cpa=0,
+        t_exit_up_cpa=330,
+    ):
+        self._theta_1 = _theta_1
         self._theta_2 = theta_2
-        self._dsm = encounter_classifier_dsm()
+        self._dsm = encounter_classifier_dsm(
+            d_enter_up_cpa=d_enter_up_cpa,
+            t_enter_up_cpa=t_enter_up_cpa,
+            t_enter_low_cpa=t_enter_low_cpa,
+            d_exit_low_cpa=d_exit_low_cpa,
+            t_exit_low_cpa=t_exit_low_cpa,
+            t_exit_up_cpa=t_exit_up_cpa,
+        )
         self.encounter = self._dsm.current_state
         self._sector_arcs = [
-            2 * theta_1,
-            theta_2 - theta_1,
+            2 * _theta_1,
+            theta_2 - _theta_1,
             2 * (pi - theta_2),
-            theta_2 - theta_1,
+            theta_2 - _theta_1,
         ]
         self._encounters = {
             1: {
@@ -69,16 +84,16 @@ class encounter_classifier:
     def identify_range_situation(
         self, rvg_course, ts_course, e, e_ts, n, n_ts, u_rvg, u_ts
     ):
-        v_os = np.array([[u_rvg * cos(rvg_course)], [u_rvg * sin(rvg_course)]])
-        v_ts = np.array([[u_ts * cos(ts_course)], [u_ts * sin(ts_course)]])
+        v_os = np.array([[u_rvg * sin(rvg_course)], [u_rvg * cos(rvg_course)]])
+        v_ts = np.array([[u_ts * sin(ts_course)], [u_ts * cos(ts_course)]])
         v_rel = v_ts - v_os
-        p_rel = np.array([n_ts - n, e_ts - e])
+        p_rel = np.array([e_ts - e, n_ts - n])
         prod = p_rel @ v_rel
 
         if prod >= 0:
-            range_situation = Range_Situation.CLOSING_IN
-        elif prod < 0:
             range_situation = Range_Situation.INCREASING
+        elif prod < 0:
+            range_situation = Range_Situation.CLOSING_IN
 
         return range_situation
 
@@ -87,14 +102,34 @@ class encounter_classifier:
         phi = atan2((e_ts - e), (n_ts - n)) - rvg_course
         rbs = 0
 
-        if self.is_angle_in_range(phi, -self._theta_1, self._theta_1):
-            rbs = 1
-        elif self.is_angle_in_range(phi, self._theta_1, self._theta_2):
+        if self.is_angle_in_range(
+            phi, self._theta_1, self._theta_1 + self._sector_arcs[1]
+        ):
             rbs = 2
-        elif self.is_angle_in_range(phi, self._theta_2, -self._theta_2):
+        elif self.is_angle_in_range(
+            phi,
+            self._theta_1 + self._sector_arcs[1],
+            self._theta_1 + self._sector_arcs[1] + +self._sector_arcs[2],
+        ):
             rbs = 3
-        elif self.is_angle_in_range(phi, -self._theta_2, -self._theta_1):
+        elif self.is_angle_in_range(
+            phi,
+            self._theta_1 + self._sector_arcs[1] + self._sector_arcs[2],
+            self._theta_1
+            + self._sector_arcs[1]
+            + self._sector_arcs[2]
+            + self._sector_arcs[3],
+        ):
             rbs = 4
+        elif self.is_angle_in_range(
+            phi,
+            self._theta_1
+            + self._sector_arcs[1]
+            + self._sector_arcs[2]
+            + self._sector_arcs[3],
+            self._theta_1,
+        ):
+            rbs = 1
 
         return rbs
 
@@ -135,13 +170,16 @@ class encounter_classifier:
         return ss, theta_11, theta_22
 
     def classify_encounter(self, rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts):
-        rbs = self.get_rbs(rvg_course, e, e_ts, n, n_ts)
-        ss, theta_11, theta_22 = self.get_ss(ts_course, e, e_ts, n, n_ts)
+        rbs = self.get_rbs(rvg_course=rvg_course, e=e, e_ts=e_ts, n=n, n_ts=n_ts)
+        ss, theta_11, theta_22 = self.get_ss(
+            ts_course=ts_course, e=e, e_ts=e_ts, n=n, n_ts=n_ts
+        )
         range_situation = self.identify_range_situation(
             rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts
         )
 
         encounter = self._encounters[rbs][ss]
+        angle = int(np.rad2deg(atan(e - e_ts / n - n_ts)))
 
         if type(encounter) is Encounters:
             return encounter
@@ -171,5 +209,4 @@ class encounter_classifier:
         )
         self._dsm.update(encounter, d_at_cpa, t_2_cpa)
         self.encounter = self._dsm.current_state  # maybe not necessary
-        print(self.encounter)
         return self.encounter.id, self.encounter.value

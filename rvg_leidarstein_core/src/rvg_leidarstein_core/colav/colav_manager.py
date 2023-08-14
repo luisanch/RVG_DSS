@@ -16,7 +16,8 @@ from .CBF_4DOF import cbf_4dof
 from .encounter_classifier import encounter_classifier
 import json
 import time
-import time
+import copy
+import numpy as np
 
 
 class colav_manager:
@@ -82,6 +83,12 @@ class colav_manager:
         self.print_c_time = print_comp_t
         self.prediction_t = prediction_t
         self._encounter_classifiers = {}
+        self._d_enter_up_cpa = safety_radius_m * 1.5
+        self._t_enter_up_cpa = 600
+        self._t_enter_low_cpa = 0
+        self._d_exit_low_cpa = safety_radius_m * 2
+        self._t_exit_low_cpa = 0
+        self._t_exit_up_cpa = 650
 
         self._arpa = arpa(
             safety_radius_m=self._safety_radius_m,
@@ -112,28 +119,57 @@ class colav_manager:
         for mmsi in vessel_ids:
             encounters[mmsi] = self._encounter_classifiers[mmsi].encounter.value
         json = self._compose_colav_msg(encounters, self._encounters_message_id)
-        print(json)
         return json
 
     def _update_encounter_classifiers(self, rvg_data, ais_data):
         # initialize classifiers
+
+        ais_keys = []
         for ais in ais_data:
+            ais_keys.append(ais["mmsi"])
             if ais["mmsi"] not in self._encounter_classifiers:
-                self._encounter_classifiers[ais["mmsi"]] = encounter_classifier()
+                self._encounter_classifiers[ais["mmsi"]] = encounter_classifier(
+                    d_enter_up_cpa=self._d_enter_up_cpa,
+                    t_enter_up_cpa=self._t_enter_up_cpa,
+                    t_enter_low_cpa=self._t_enter_low_cpa,
+                    d_exit_low_cpa=self._d_exit_low_cpa,
+                    t_exit_low_cpa=self._t_exit_low_cpa,
+                    t_exit_up_cpa=self._t_exit_up_cpa,
+                )
 
             if ais["mmsi"] in self._encounter_classifiers:
-                self._encounter_classifiers[ais["mmsi"]].get_encounter_type(
-                    rvg_data["course"],
-                    ais["course"],
-                    0,
-                    ais["po_x"],
-                    0,
-                    ais["po_y"],
-                    rvg_data["u"],
-                    ais["uo"],
-                    ais["cpa"]["d_at_cpa"],
-                    ais["cpa"]["t_2_cpa"],
-                )
+                if ais.get("safety_params") is not None:
+                    self._encounter_classifiers[ais["mmsi"]].get_encounter_type(
+                        rvg_course=np.deg2rad(rvg_data["course"]),
+                        ts_course=np.deg2rad(ais["course"]),
+                        e=ais["safety_params"]["x_at_r"],
+                        e_ts=ais["safety_params"]["t_x_at_r"],
+                        n=ais["safety_params"]["y_at_r"],
+                        n_ts=ais["safety_params"]["t_y_at_r"],
+                        v_rvg=rvg_data["u"],
+                        v_ts=ais["uo"],
+                        d_at_cpa=self._safety_radius_m,
+                        t_2_cpa=ais["safety_params"]["t_2_r"],
+                    )
+
+                else:
+                    self._encounter_classifiers[ais["mmsi"]].get_encounter_type(
+                        rvg_course=np.deg2rad(rvg_data["course"]),
+                        ts_course=np.deg2rad(ais["course"]),
+                        e=ais["cpa"]["x_at_cpa"],
+                        e_ts=ais["cpa"]["o_x_at_cpa"],
+                        n=ais["cpa"]["y_at_cpa"],
+                        n_ts=ais["cpa"]["o_y_at_cpa"],
+                        v_rvg=rvg_data["u"],
+                        v_ts=ais["uo"],
+                        d_at_cpa=ais["cpa"]["d_at_cpa"],
+                        t_2_cpa=ais["cpa"]["t_2_cpa"],
+                    )
+
+        # delete unused classifiers
+        for key in ais_keys:
+            if key not in self._encounter_classifiers:
+                del self._encounter_classifiers[key]
 
     def sort_cbf_data(self):
         """

@@ -6,14 +6,14 @@ from .ARPA import arpa
 
 class encounter_classifier_dsm(StateMachine):
     def __init__(
-            self,
-            d_enter_up_cpa=200,
-            t_enter_up_cpa=300,
-            t_enter_low_cpa=0,
-            d_exit_low_cpa=250,
-            t_exit_low_cpa=0,
-            t_exit_up_cpa=330,
-            d_crit=50,
+        self,
+        d_enter_up_cpa=200,
+        t_enter_up_cpa=300,
+        t_enter_low_cpa=0,
+        d_exit_low_cpa=250,
+        t_exit_low_cpa=0,
+        t_exit_up_cpa=330,
+        d_crit=50,
     ):
         super(encounter_classifier_dsm, self).__init__()
         self.arpa = arpa(safety_radius_m=d_crit)
