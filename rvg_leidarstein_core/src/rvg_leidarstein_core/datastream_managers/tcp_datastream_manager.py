@@ -12,8 +12,8 @@ to handle the reception and processing of datastream messages from a TCP socket 
 import socket
 import time
 import select
-from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
-from rvg_leidarstein_core.datastream_managers.datastream_manager import datastream_manager
+from .Decrypter import decrypter
+from .datastream_manager import datastream_manager
 
 
 class tcp_datastream_manager(datastream_manager):

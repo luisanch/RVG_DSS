@@ -11,10 +11,8 @@ The LogDatastreamManager inherits from the DatastreamManager class and extends
 its functionality by adding logging capabilities to write the received 
 datastream messages to a log file.
 """
-from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
-from rvg_leidarstein_core.datastream_managers.datastream_manager import (
-    datastream_manager,
-)
+from .Decrypter import decrypter
+from .datastream_manager import datastream_manager
 from tqdm import tqdm
 
 
@@ -40,14 +38,14 @@ class log_datastream_manager(datastream_manager):
     """
 
     def __init__(
-        self,
-        path,
-        loop_limit=1,
-        verbosity=(False, False, False, False, False),
-        decrypter=decrypter,
-        drop_ais_messages=True,
-        prefixFilter=[],
-        suffixFilter="",
+            self,
+            path,
+            loop_limit=1,
+            verbosity=(False, False, False, False, False),
+            decrypter=decrypter,
+            drop_ais_messages=True,
+            prefixFilter=[],
+            suffixFilter="",
     ):
         self.parse_complete = False
         self.prefixFilter = prefixFilter

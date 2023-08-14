@@ -9,15 +9,11 @@ order they were recorded, simulating real-time data stream behavior. The replay
 speed is adjusted based on the actual time difference between messages in the log file.
 """
 
-from rvg_leidarstein_core.datastream_managers.log_datastream_manager import (
-    log_datastream_manager,
-)
-from rvg_leidarstein_core.serializers.fast_serializer import fast_serializer
-from rvg_leidarstein_core.simulation.simulation_server import simulation_server
-from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import (
-    rvg_leidarstein_websocket,
-)
-from rvg_leidarstein_core.colav.colav_manager import colav_manager
+from ..datastream_managers.log_datastream_manager import log_datastream_manager
+from ..serializers.fast_serializer import fast_serializer
+from ..simulation.simulation_server import simulation_server
+from ..data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from ..colav.colav_manager import colav_manager
 from time import time
 
 

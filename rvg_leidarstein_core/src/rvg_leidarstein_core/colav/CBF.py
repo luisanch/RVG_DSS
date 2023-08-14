@@ -9,7 +9,7 @@ This module contains the 'cbf' class, which provides control barrier functionali
 import math
 import numpy as np
 import copy
-from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
+from ..simulation.simulation_transform import simulation_transform
 from time import time
 
 
