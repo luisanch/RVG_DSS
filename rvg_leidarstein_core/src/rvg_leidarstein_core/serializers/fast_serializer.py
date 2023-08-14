@@ -11,10 +11,8 @@ The FastSerializer class inherits attributes and methods from the Serializer cla
 overrides some of them to improve serialization performance.
 """
 
-from rvg_leidarstein_core.serializers.serializer import serializer
-from rvg_leidarstein_core.datastream_managers.datastream_manager import (
-    datastream_manager,
-)
+from .serializer import serializer
+from ..datastream_managers.datastream_manager import datastream_manager
 
 
 class fast_serializer(serializer):

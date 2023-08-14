@@ -1,7 +1,7 @@
 import sys
 import pynmea2
 from pyais import decode as ais_decode
-from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
+from .Decrypter import decrypter
 
 
 class datastream_manager:

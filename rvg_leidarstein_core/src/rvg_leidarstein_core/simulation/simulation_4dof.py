@@ -15,10 +15,10 @@ from datetime import datetime
 import numpy as np
 from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
-from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
-from rvg_leidarstein_core.colav.colav_manager import colav_manager
-from rvg_leidarstein_core.serializers.fast_serializer import fast_serializer
-from rvg_leidarstein_core.simulation.simulation_server import simulation_server
+from ..data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from ..colav.colav_manager import colav_manager
+from ..serializers.fast_serializer import fast_serializer
+from .simulation_server import simulation_server
 
 
 class simulation_4dof(simulation_server):

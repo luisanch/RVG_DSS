@@ -11,7 +11,7 @@ four-degree-of-freedom (4DOF) system.
 import math
 import numpy as np
 from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
-from rvg_leidarstein_core.colav.cbf import cbf
+from rvg_leidarstein_core.colav.CBF import cbf
 
 from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model

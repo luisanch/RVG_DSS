@@ -16,11 +16,9 @@ Classes:
 --------
 simulation_manager
 """
-from rvg_leidarstein_core.simulation.simulation_server import simulation_server
-from rvg_leidarstein_core.simulation.simulation_server_replay import (
-    simulation_server_replay,
-)
-from rvg_leidarstein_core.simulation.simulation_4dof import simulation_4dof
+from .simulation_server import simulation_server
+from .simulation_server_replay import simulation_server_replay
+from .simulation_4dof import simulation_4dof
 from threading import Thread
 
 

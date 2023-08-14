@@ -21,19 +21,14 @@ import pathlib
 import os
 from datetime import datetime
 import easygui
-from rvg_leidarstein_core.datastream_managers.tcp_datastream_manager import (
-    tcp_datastream_manager,
-)
-from rvg_leidarstein_core.datastream_managers.log_datastream_manager import (
-    log_datastream_manager,
-)
-from rvg_leidarstein_core.serializers.fast_serializer import fast_serializer
-from rvg_leidarstein_core.colav.colav_manager import colav_manager
-from rvg_leidarstein_core.simulation.simulation_manager import simulation_manager
-from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import (
-    rvg_leidarstein_websocket,
-)
-from rvg_leidarstein_core.datastream_managers.decrypter import decrypter
+
+from .datastream_managers.tcp_datastream_manager import tcp_datastream_manager
+from .datastream_managers.log_datastream_manager import log_datastream_manager
+from .serializers.fast_serializer import fast_serializer
+from .colav.colav_manager import colav_manager
+from .simulation.simulation_manager import simulation_manager
+from .data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from .datastream_managers.Decrypter import decrypter
 
 
 class core:

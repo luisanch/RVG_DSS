@@ -1,7 +1,9 @@
+
+
 from math import atan2, pi, cos, sin
 import numpy as np
-from rvg_leidarstein_core.colav.encounter_classifier_dsm import encounter_classifier_dsm
-from rvg_leidarstein_core.colav.enums import Encounters, Range_Situation
+from .encounter_classifier_dsm import encounter_classifier_dsm
+from .enums import Encounters, Range_Situation
 
 
 class encounter_classifier:

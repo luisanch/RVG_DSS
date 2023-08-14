@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from rvg_leidarstein_core.core import core
 from time import sleep, time
 import argparse

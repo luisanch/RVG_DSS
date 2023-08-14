@@ -10,8 +10,8 @@ and safety parameters for vessels in proximity to a reference vessel.
 
 import math
 import numpy as np
-from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
 import copy
+from ..simulation.simulation_transform import simulation_transform
 
 
 class arpa:

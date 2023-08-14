@@ -10,12 +10,10 @@ A server class for managing simulation data, transformations, and communication.
 import numpy as np
 from scipy.signal import butter, filtfilt
 import json
-from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
-from rvg_leidarstein_core.serializers.fast_serializer import fast_serializer
-from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import (
-    rvg_leidarstein_websocket,
-)
-from rvg_leidarstein_core.colav.colav_manager import colav_manager
+from .simulation_transform import simulation_transform
+from ..serializers.fast_serializer import fast_serializer
+from ..data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from ..colav.colav_manager import colav_manager
 import math
 
 
