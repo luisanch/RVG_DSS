@@ -39,7 +39,7 @@ function DomainCanvas() {
     const slope = (centerY - y) / (centerX - x);
     const perpendicularSlope = -1 / slope;
 
-    const length = canvasSize / 2; // Set line length to canvas height
+    const length = canvasSize; // Set line length to canvas height
     const endX1 =
       x + length / Math.sqrt(1 + perpendicularSlope * perpendicularSlope);
     const endY1 = y + perpendicularSlope * (endX1 - x);
@@ -55,9 +55,10 @@ function DomainCanvas() {
     const ctx = canvas.getContext("2d");
 
     ctx.clearRect(0, 0, canvasSize, canvasSize);
-    drawCenter(ctx);
+    drawGrid(ctx);
     drawLines(ctx);
     drawPreviewLine(ctx);
+    drawCenter(ctx);
   }, [lines, previewLine, canvasSize]);
 
   const drawCenter = (ctx) => {
@@ -96,6 +97,38 @@ function DomainCanvas() {
       ctx.strokeStyle = "black";
       ctx.stroke();
     }
+  };
+
+  const drawGrid = (ctx) => {
+    const gridSize = 20; // Adjust this to control grid density
+    const centerX = canvasSize / 2;
+    const centerY = canvasSize / 2;
+    ctx.strokeStyle = "#ddd"; // Grid color
+
+    // Draw horizontal grid lines
+    for (let y = gridSize; y < canvasSize; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvasSize, y);
+      ctx.stroke();
+    }
+
+    // Draw vertical grid lines
+    for (let x = gridSize; x < canvasSize; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvasSize);
+      ctx.stroke();
+    }
+
+    // Draw axes
+    ctx.strokeStyle = "#000"; // Axes color
+    ctx.beginPath();
+    ctx.moveTo(centerX, 0);
+    ctx.lineTo(centerX, canvasSize);
+    ctx.moveTo(0, centerY);
+    ctx.lineTo(canvasSize, centerY);
+    ctx.stroke();
   };
 
   const handleDeleteLastLine = () => {
