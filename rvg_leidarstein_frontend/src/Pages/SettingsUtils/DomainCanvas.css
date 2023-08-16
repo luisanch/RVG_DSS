@@ -7,9 +7,15 @@
     border: 1px solid black;
   }
   
-  .DeleteButton {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+  .Button { 
     padding: 5px 10px;
+  }
+
+  .ControlsRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    background-color: #f0f0f0;
   }

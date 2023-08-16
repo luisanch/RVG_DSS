@@ -137,7 +137,7 @@ export default function Settings(props) {
         </Select>
         <FormHelperText>Data Mode</FormHelperText>
       </FormControl>
-      <DomainCanvas/>
+      <DomainCanvas sendMessage={sendMessage}/>
     </FormGroup>
   );
 }

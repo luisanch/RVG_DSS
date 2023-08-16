@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import "./DomainCanvas.css";
 
-function DomainCanvas() {
-  const canvasRef = useRef(null); 
+function DomainCanvas(props) {
+  const sendMessage = props.sendMessage;
+  const canvasRef = useRef(null);
   const [canvasId, setCanvasId] = useState("SAFE"); // Default canvas ID
   const [canvasLines, setCanvasLines] = useState({
     SAFE: [],
@@ -11,11 +12,10 @@ function DomainCanvas() {
     HEADON: [],
     GIVEWAY: [],
     STANDON: [],
-    // Add more canvases as needed
   });
   const [previewLine, setPreviewLine] = useState(null);
-  const canvasSize = 400; 
-  const gridFactor = 4;
+  const canvasSize = 400;
+  const gridFactor = 6;
 
   const handleCanvasClick = (e) => {
     if (previewLine) {
@@ -116,13 +116,15 @@ function DomainCanvas() {
     const gridSize = canvasSize / gridFactor;
     const centerX = canvasSize / 2;
     const centerY = canvasSize / 2;
-    const gridOriginX = centerX % gridSize === 0 ? centerX : centerX - (centerX % gridSize);
-    const gridOriginY = centerY % gridSize === 0 ? centerY : centerY - (centerY % gridSize);
+    const gridOriginX =
+      centerX % gridSize === 0 ? centerX : centerX - (centerX % gridSize);
+    const gridOriginY =
+      centerY % gridSize === 0 ? centerY : centerY - (centerY % gridSize);
 
     ctx.strokeStyle = "#ddd"; // Grid color
 
     // Draw horizontal grid lines and scale markings
-    for (let y = gridOriginY; y < canvasSize; y += gridSize / gridFactor) {
+    for (let y = 0; y <= canvasSize; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(canvasSize, y);
@@ -130,26 +132,13 @@ function DomainCanvas() {
 
       // Draw scale marking on the positive y-axis
       if (y !== centerY) {
-        const scaleValue = ((centerY - y) / (gridSize )).toFixed(1);
-        ctx.fillText(scaleValue, centerX + 5, y + 10);
-      }
-    }
-
-    for (let y = gridOriginY; y > 0; y -= gridSize / gridFactor) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvasSize, y);
-      ctx.stroke();
-
-      // Draw scale marking on the positive y-axis
-      if (y !== centerY) {
-        const scaleValue = ((centerY - y) / (gridSize )).toFixed(1);
+        const scaleValue = ((centerY - y) / gridSize).toFixed(1);
         ctx.fillText(scaleValue, centerX + 5, y + 10);
       }
     }
 
     // Draw vertical grid lines and scale markings
-    for (let x = gridOriginX; x < canvasSize; x += gridSize/ gridFactor) {
+    for (let x = 0; x <= canvasSize; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, canvasSize);
@@ -157,21 +146,8 @@ function DomainCanvas() {
 
       // Draw scale marking on the positive x-axis
       if (x !== centerX) {
-        const scaleValue = ((x - centerX) / (gridSize )).toFixed(1);
-        ctx.fillText(scaleValue, x - 5, centerY + 15);
-      }
-    }
-
-    for (let x = gridOriginX; x > 0; x -= gridSize/ gridFactor) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvasSize);
-      ctx.stroke();
-
-      // Draw scale marking on the positive x-axis
-      if (x !== centerX) {
-        const scaleValue = ((x - centerX) / (gridSize )).toFixed(1);
-        ctx.fillText(scaleValue, x - 5, centerY + 15);
+        const scaleValue = ((x - centerX) / gridSize).toFixed(1);
+        ctx.fillText(scaleValue, x + 5, centerY + 15);
       }
     }
 
@@ -185,10 +161,12 @@ function DomainCanvas() {
     ctx.stroke();
   };
 
-
   const handleDeleteLastLine = () => {
     if (canvasLines[canvasId].length > 0) {
-      const updatedLines = canvasLines[canvasId].slice(0, canvasLines[canvasId].length - 1);
+      const updatedLines = canvasLines[canvasId].slice(
+        0,
+        canvasLines[canvasId].length - 1
+      );
       setCanvasLines((prevCanvasLines) => ({
         ...prevCanvasLines,
         [canvasId]: updatedLines,
@@ -196,20 +174,60 @@ function DomainCanvas() {
     }
   };
 
+  const handleSave = () => {
+    if (canvasLines[canvasId].length > 0) {
+      let message = {
+        type: "datain",
+        content: {
+          message_id: "cbf_domains",
+        },
+      };
+
+      const keys = Object.keys(canvasLines);
+      console.log(keys);
+      keys.forEach((key) => {
+        console.log(key);
+        message.content[key] = {};
+        message.content[key].d = [];
+        message.content[key].z1 = [];
+        message.content[key].z2 = [];
+
+        if (canvasLines[key].length > 0) {
+          canvasLines[key].forEach((line) => {
+            const x =
+              (gridFactor * (line.startX - canvasSize / 2)) / canvasSize;
+            const y =
+              (gridFactor * (canvasSize / 2 - line.startY)) / canvasSize;
+            const d = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+            message.content[key].d.push(d);
+            message.content[key].z1.push(x / d);
+            message.content[key].z2.push(y / d);
+          });
+        }
+      });
+      sendMessage(JSON.stringify(message, null, 2));
+    }
+  };
+
   return (
     <div className="Container">
-      <button onClick={handleDeleteLastLine} className="DeleteButton">
-        Delete
-      </button>
-      <select value={canvasId} onChange={(e) => setCanvasId(e.target.value)}>
-        <option value="SAFE">SAFE</option>
-        <option value="OVERTAKING_STAR">OVERTAKING_STAR</option>
-        <option value="OVERTAKING_PORT">OVERTAKING_PORT</option>
-        <option value="HEADON">HEADON</option>
-        <option value="GIVEWAY">GIVEWAY</option>
-        <option value="STANDON">STANDON</option>
-        {/* Add more options for additional canvases */}
-      </select>
+      <div className="ControlsRow">
+        <button onClick={handleDeleteLastLine} className="Button">
+          Delete
+        </button>
+        <button onClick={handleSave} className="Button">
+          Save
+        </button>
+        <select value={canvasId} onChange={(e) => setCanvasId(e.target.value)}>
+          <option value="SAFE">SAFE</option>
+          <option value="OVERTAKING_STAR">OVERTAKING_STAR</option>
+          <option value="OVERTAKING_PORT">OVERTAKING_PORT</option>
+          <option value="HEADON">HEADON</option>
+          <option value="GIVEWAY">GIVEWAY</option>
+          <option value="STANDON">STANDON</option>
+          {/* Add more options for additional canvases */}
+        </select>
+      </div>
       <canvas
         ref={canvasRef}
         width={canvasSize}
