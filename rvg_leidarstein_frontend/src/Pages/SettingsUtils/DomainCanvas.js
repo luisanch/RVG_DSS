@@ -2,8 +2,17 @@ import React, { useRef, useState, useEffect } from "react";
 import "./DomainCanvas.css";
 
 function DomainCanvas() {
-  const canvasRef = useRef(null);
-  const [lines, setLines] = useState([]);
+  const canvasRef = useRef(null); 
+  const [canvasId, setCanvasId] = useState("SAFE"); // Default canvas ID
+  const [canvasLines, setCanvasLines] = useState({
+    SAFE: [],
+    OVERTAKING_STAR: [],
+    OVERTAKING_PORT: [],
+    HEADON: [],
+    GIVEWAY: [],
+    STANDON: [],
+    // Add more canvases as needed
+  });
   const [previewLine, setPreviewLine] = useState(null);
   const canvasSize = 400; 
   const gridFactor = 4;
@@ -11,7 +20,10 @@ function DomainCanvas() {
   const handleCanvasClick = (e) => {
     if (previewLine) {
       const newLine = { ...previewLine };
-      setLines([...lines, newLine]);
+      setCanvasLines((prevCanvasLines) => ({
+        ...prevCanvasLines,
+        [canvasId]: [...prevCanvasLines[canvasId], newLine],
+      }));
       setPreviewLine(null); // Reset preview line after clicking
     }
   };
@@ -60,7 +72,7 @@ function DomainCanvas() {
     drawLines(ctx);
     drawPreviewLine(ctx);
     drawCenter(ctx);
-  }, [lines, previewLine, canvasSize]);
+  }, [canvasLines[canvasId], previewLine, canvasSize]);
 
   const drawCenter = (ctx) => {
     const centerX = canvasSize / 2;
@@ -77,7 +89,7 @@ function DomainCanvas() {
   };
 
   const drawLines = (ctx) => {
-    lines.forEach((line, index) => {
+    canvasLines[canvasId].forEach((line, index) => {
       ctx.beginPath();
       ctx.moveTo(line.startX, line.startY);
       ctx.lineTo(line.endX1, line.endY1);
@@ -175,9 +187,12 @@ function DomainCanvas() {
 
 
   const handleDeleteLastLine = () => {
-    if (lines.length > 0) {
-      const updatedLines = lines.slice(0, lines.length - 1);
-      setLines(updatedLines);
+    if (canvasLines[canvasId].length > 0) {
+      const updatedLines = canvasLines[canvasId].slice(0, canvasLines[canvasId].length - 1);
+      setCanvasLines((prevCanvasLines) => ({
+        ...prevCanvasLines,
+        [canvasId]: updatedLines,
+      }));
     }
   };
 
@@ -186,6 +201,15 @@ function DomainCanvas() {
       <button onClick={handleDeleteLastLine} className="DeleteButton">
         Delete
       </button>
+      <select value={canvasId} onChange={(e) => setCanvasId(e.target.value)}>
+        <option value="SAFE">SAFE</option>
+        <option value="OVERTAKING_STAR">OVERTAKING_STAR</option>
+        <option value="OVERTAKING_PORT">OVERTAKING_PORT</option>
+        <option value="HEADON">HEADON</option>
+        <option value="GIVEWAY">GIVEWAY</option>
+        <option value="STANDON">STANDON</option>
+        {/* Add more options for additional canvases */}
+      </select>
       <canvas
         ref={canvasRef}
         width={canvasSize}
