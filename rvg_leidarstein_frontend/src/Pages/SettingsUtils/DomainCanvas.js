@@ -5,7 +5,8 @@ function DomainCanvas() {
   const canvasRef = useRef(null);
   const [lines, setLines] = useState([]);
   const [previewLine, setPreviewLine] = useState(null);
-  const canvasSize = 500;
+  const canvasSize = 400; 
+  const gridFactor = 4;
 
   const handleCanvasClick = (e) => {
     if (previewLine) {
@@ -100,25 +101,66 @@ function DomainCanvas() {
   };
 
   const drawGrid = (ctx) => {
-    const gridSize = 20; // Adjust this to control grid density
+    const gridSize = canvasSize / gridFactor;
     const centerX = canvasSize / 2;
     const centerY = canvasSize / 2;
+    const gridOriginX = centerX % gridSize === 0 ? centerX : centerX - (centerX % gridSize);
+    const gridOriginY = centerY % gridSize === 0 ? centerY : centerY - (centerY % gridSize);
+
     ctx.strokeStyle = "#ddd"; // Grid color
 
-    // Draw horizontal grid lines
-    for (let y = gridSize; y < canvasSize; y += gridSize) {
+    // Draw horizontal grid lines and scale markings
+    for (let y = gridOriginY; y < canvasSize; y += gridSize / gridFactor) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(canvasSize, y);
       ctx.stroke();
+
+      // Draw scale marking on the positive y-axis
+      if (y !== centerY) {
+        const scaleValue = ((centerY - y) / (gridSize )).toFixed(1);
+        ctx.fillText(scaleValue, centerX + 5, y + 10);
+      }
     }
 
-    // Draw vertical grid lines
-    for (let x = gridSize; x < canvasSize; x += gridSize) {
+    for (let y = gridOriginY; y > 0; y -= gridSize / gridFactor) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvasSize, y);
+      ctx.stroke();
+
+      // Draw scale marking on the positive y-axis
+      if (y !== centerY) {
+        const scaleValue = ((centerY - y) / (gridSize )).toFixed(1);
+        ctx.fillText(scaleValue, centerX + 5, y + 10);
+      }
+    }
+
+    // Draw vertical grid lines and scale markings
+    for (let x = gridOriginX; x < canvasSize; x += gridSize/ gridFactor) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, canvasSize);
       ctx.stroke();
+
+      // Draw scale marking on the positive x-axis
+      if (x !== centerX) {
+        const scaleValue = ((x - centerX) / (gridSize )).toFixed(1);
+        ctx.fillText(scaleValue, x - 5, centerY + 15);
+      }
+    }
+
+    for (let x = gridOriginX; x > 0; x -= gridSize/ gridFactor) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvasSize);
+      ctx.stroke();
+
+      // Draw scale marking on the positive x-axis
+      if (x !== centerX) {
+        const scaleValue = ((x - centerX) / (gridSize )).toFixed(1);
+        ctx.fillText(scaleValue, x - 5, centerY + 15);
+      }
     }
 
     // Draw axes
@@ -130,6 +172,7 @@ function DomainCanvas() {
     ctx.lineTo(canvasSize, centerY);
     ctx.stroke();
   };
+
 
   const handleDeleteLastLine = () => {
     if (lines.length > 0) {
