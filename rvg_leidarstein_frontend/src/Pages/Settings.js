@@ -71,73 +71,75 @@ export default function Settings(props) {
   };
 
   return (
-    <FormGroup>
-      {/* Checkboxes for various settings */}
-      <FormControlLabel
-        control={
-          <Checkbox
-            id="hitbox"
-            checked={settings.showHitbox}
-            onChange={handleChangeHitbox}
-          />
-        }
-        label="Show ARPA data"
-      />
-      <FormControlLabel
-        control={
-          <Checkbox
-            id="compacttooltips"
-            disabled={!settings.showHitbox}
-            checked={settings.shortTooltips}
-            onChange={handleChangeShortTooltips}
-          />
-        }
-        label="Compact ARPA tooltips"
-      />
-      <FormControlLabel
-        control={
-          <Checkbox
-            id="alwaysdisptootltips"
-            disabled={!settings.showHitbox}
-            checked={settings.showAllTooltips}
-            onChange={handleChangeTooltips}
-          />
-        }
-        label="Always display ARPA tooltips"
-      />
-      <FormControlLabel
-        control={
-          <Checkbox
-            id="navmodeon"
-            checked={settings.navigationMode}
-            onChange={handleChangeNavigation}
-          />
-        }
-        label="Navigation Mode On"
-      />
-      <FormControlLabel
-        control={
-          <Checkbox
-            id="showsimcontrols"
-            checked={settings.showSimControls}
-            onChange={handleShowSimControls}
-          />
-        }
-        label="Show Sim. Controls"
-      />
-      {/* Select menu for data mode */}
-      <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-        <Select
-          labelId="simMode-label"
-          value={settings.simMode}
-          onChange={handleSimMode}
-        >
-          <MenuItem value={"4dof"}>4 DOF Sim.</MenuItem>
-          <MenuItem value={"rt"}>Real Time</MenuItem>
-        </Select>
-        <FormHelperText>Data Mode</FormHelperText>
-      </FormControl>
-      <DomainCanvas sendMessage={sendMessage}/>
-    </FormGroup>
+    <div className="ControlsRow">
+      <FormGroup>
+        {/* Checkboxes for various settings */}
+        <FormControlLabel
+          control={
+            <Checkbox
+              id="hitbox"
+              checked={settings.showHitbox}
+              onChange={handleChangeHitbox}
+            />
+          }
+          label="Show ARPA data"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              id="compacttooltips"
+              disabled={!settings.showHitbox}
+              checked={settings.shortTooltips}
+              onChange={handleChangeShortTooltips}
+            />
+          }
+          label="Compact ARPA tooltips"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              id="alwaysdisptootltips"
+              disabled={!settings.showHitbox}
+              checked={settings.showAllTooltips}
+              onChange={handleChangeTooltips}
+            />
+          }
+          label="Always display ARPA tooltips"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              id="navmodeon"
+              checked={settings.navigationMode}
+              onChange={handleChangeNavigation}
+            />
+          }
+          label="Navigation Mode On"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              id="showsimcontrols"
+              checked={settings.showSimControls}
+              onChange={handleShowSimControls}
+            />
+          }
+          label="Show Sim. Controls"
+        />
+        {/* Select menu for data mode */}
+        <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
+          <Select
+            labelId="simMode-label"
+            value={settings.simMode}
+            onChange={handleSimMode}
+          >
+            <MenuItem value={"4dof"}>4 DOF Sim.</MenuItem>
+            <MenuItem value={"rt"}>Real Time</MenuItem>
+          </Select>
+          <FormHelperText>Data Mode</FormHelperText>
+        </FormControl>
+      </FormGroup>
+      <DomainCanvas sendMessage={sendMessage} />
+    </div>
   );
 }
