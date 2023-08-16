@@ -4,16 +4,32 @@ import "./DomainCanvas.css";
 function DomainCanvas() {
   const canvasRef = useRef(null);
   const [lines, setLines] = useState([]);
+  const [previewLine, setPreviewLine] = useState(null);
   const canvasSize = 500;
 
   const handleCanvasClick = (e) => {
+    if (previewLine) {
+      const newLine = { ...previewLine };
+      setLines([...lines, newLine]);
+      setPreviewLine(null); // Reset preview line after clicking
+    }
+  };
+
+  const handleMouseMove = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    const newPreviewLine = calculatePerpendicularLine(canvasSize, x, y);
+    setPreviewLine(newPreviewLine);
+  };
 
-    const newLine = calculatePerpendicularLine(canvasSize, x, y);
-    setLines([...lines, newLine]);
+  const handleCanvasLeave = () => {
+    setPreviewLine(null); // Reset preview line when mouse leaves canvas
+  };
+
+  const handleCanvasEnter = (e) => {
+    handleMouseMove(e);
   };
 
   const calculatePerpendicularLine = (canvasSize, x, y) => {
@@ -41,7 +57,8 @@ function DomainCanvas() {
     ctx.clearRect(0, 0, canvasSize, canvasSize);
     drawCenter(ctx);
     drawLines(ctx);
-  }, [lines, canvasSize]);
+    drawPreviewLine(ctx);
+  }, [lines, previewLine, canvasSize]);
 
   const drawCenter = (ctx) => {
     const centerX = canvasSize / 2;
@@ -69,6 +86,18 @@ function DomainCanvas() {
     });
   };
 
+  const drawPreviewLine = (ctx) => {
+    if (previewLine != null) {
+      ctx.beginPath();
+      ctx.moveTo(previewLine.startX, previewLine.startY);
+      ctx.lineTo(previewLine.endX1, previewLine.endY1);
+      ctx.moveTo(previewLine.startX, previewLine.startY);
+      ctx.lineTo(previewLine.endX2, previewLine.endY2);
+      ctx.strokeStyle = "black";
+      ctx.stroke();
+    }
+  };
+
   const handleDeleteLastLine = () => {
     if (lines.length > 0) {
       const updatedLines = lines.slice(0, lines.length - 1);
@@ -79,13 +108,16 @@ function DomainCanvas() {
   return (
     <div className="Container">
       <button onClick={handleDeleteLastLine} className="DeleteButton">
-        Delete Last Line
+        Delete
       </button>
       <canvas
         ref={canvasRef}
         width={canvasSize}
         height={canvasSize}
         onClick={handleCanvasClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleCanvasLeave}
+        onMouseEnter={handleCanvasEnter}
       ></canvas>
     </div>
   );
