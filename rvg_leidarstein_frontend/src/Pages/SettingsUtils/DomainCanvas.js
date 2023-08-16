@@ -69,8 +69,18 @@ function DomainCanvas() {
     });
   };
 
+  const handleDeleteLastLine = () => {
+    if (lines.length > 0) {
+      const updatedLines = lines.slice(0, lines.length - 1);
+      setLines(updatedLines);
+    }
+  };
+
   return (
     <div className="Container">
+      <button onClick={handleDeleteLastLine} className="DeleteButton">
+        Delete Last Line
+      </button>
       <canvas
         ref={canvasRef}
         width={canvasSize}
