@@ -21,6 +21,7 @@ import {
   MenuItem,
   FormHelperText,
 } from "@mui/material";
+import DomainCanvas from "./SettingsUtils/DomainCanvas";
 
 export default function Settings(props) {
   // Extracting props
@@ -136,6 +137,7 @@ export default function Settings(props) {
         </Select>
         <FormHelperText>Data Mode</FormHelperText>
       </FormControl>
+      <DomainCanvas/>
     </FormGroup>
   );
 }
