@@ -21,7 +21,7 @@ class rvg_leidarstein_websocket:
         self,
         address,
         enable=True,
-        receive_filters=["control_azi", "control_thrust", "data_mode"],
+        receive_filters=["control_azi", "control_thrust", "data_mode", "cbf_domains"],
     ):
         self.address = address
         self.enable = enable
@@ -67,8 +67,9 @@ class rvg_leidarstein_websocket:
 
                 for filter in self._receive_filters:
                     if msg_id == filter:
+
                         val = msg["content"]["val"]
-                        self.received_data[msg_id] = val
+                        self.received_data[msg_id] = val 
 
     def close(self):
         """

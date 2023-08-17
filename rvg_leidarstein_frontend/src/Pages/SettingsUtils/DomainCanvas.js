@@ -65,7 +65,7 @@ function DomainCanvas(props) {
       endX2 =
         x - length / Math.sqrt(1 + perpendicularSlope * perpendicularSlope);
       endY2 = y - perpendicularSlope * (endX1 - x);
-    } 
+    }
     return { startX: x, startY: y, endX1, endY1, endX2, endY2 };
   };
 
@@ -180,23 +180,44 @@ function DomainCanvas(props) {
     }
   };
 
+  const handleLoad = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const loadedData = JSON.parse(event.target.result);
+
+      // Update the canvasLines state with the loaded data
+      const keys = Object.keys(loadedData);
+      keys.forEach((key) => {
+        setCanvasLines((prevCanvasLines) => ({
+          ...prevCanvasLines,
+          [key]: loadedData[key].lines || [],
+        }));
+      });
+    };
+
+    reader.readAsText(file);
+  };
+
   const handleSave = () => {
     if (canvasLines[canvasId].length > 0) {
       let message = {
         type: "datain",
         content: {
           message_id: "cbf_domains",
+          val: {},
         },
       };
 
       const keys = Object.keys(canvasLines);
-      console.log(keys);
       keys.forEach((key) => {
-        console.log(key);
-        message.content[key] = {};
-        message.content[key].d = [];
-        message.content[key].z1 = [];
-        message.content[key].z2 = [];
+        message.content.val[key] = {};
+        message.content.val[key].d = [];
+        message.content.val[key].z1 = [];
+        message.content.val[key].z2 = [];
+        message.content.val[key].lines = canvasLines[key];
 
         if (canvasLines[key].length > 0) {
           canvasLines[key].forEach((line) => {
@@ -205,9 +226,9 @@ function DomainCanvas(props) {
             const y =
               (gridFactor * (canvasSize / 2 - line.startY)) / canvasSize;
             const d = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
-            message.content[key].d.push(d);
-            message.content[key].z1.push(x / d);
-            message.content[key].z2.push(y / d);
+            message.content.val[key].d.push(d);
+            message.content.val[key].z1.push(x / d);
+            message.content.val[key].z2.push(y / d);
           });
         }
       });
@@ -217,13 +238,21 @@ function DomainCanvas(props) {
 
   return (
     <div className="Container">
+      <canvas
+        ref={canvasRef}
+        width={canvasSize}
+        height={canvasSize}
+        onClick={handleCanvasClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleCanvasLeave}
+        onMouseEnter={handleCanvasEnter}
+      ></canvas>
       <div className="ControlsRow">
-        <button onClick={handleDeleteLastLine} className="Button">
-          Delete
-        </button>
-        <button onClick={handleSave} className="Button">
-          Save
-        </button>
+        <button onClick={handleDeleteLastLine}>Delete</button>
+        <button onClick={handleSave}>Save</button>
+      </div>
+      <div className="ControlsRow">
+        <input type="file" accept=".json" onChange={handleLoad} />
         <select value={canvasId} onChange={(e) => setCanvasId(e.target.value)}>
           <option value="SAFE">SAFE</option>
           <option value="OVERTAKING_STAR">OVERTAKING_STAR</option>
@@ -234,15 +263,6 @@ function DomainCanvas(props) {
           {/* Add more options for additional canvases */}
         </select>
       </div>
-      <canvas
-        ref={canvasRef}
-        width={canvasSize}
-        height={canvasSize}
-        onClick={handleCanvasClick}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleCanvasLeave}
-        onMouseEnter={handleCanvasEnter}
-      ></canvas>
     </div>
   );
 }

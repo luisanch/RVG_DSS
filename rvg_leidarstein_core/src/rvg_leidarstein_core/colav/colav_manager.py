@@ -25,7 +25,7 @@ class colav_manager:
         self,
         enable=True,
         update_interval=1,
-        safety_radius_m=200,
+        safety_radius_m=25,
         safety_radius_tol=1.5,
         max_d_2_cpa=2000,
         gunnerus_mmsi="",
@@ -89,6 +89,39 @@ class colav_manager:
         self._d_exit_low_cpa = safety_radius_m * 2
         self._t_exit_low_cpa = 0
         self._t_exit_up_cpa = 650
+        self.cbf_domains = {
+            "SAFE": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "OVERTAKING_STAR": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "OVERTAKING_PORT": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "HEADON": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "GIVEWAY": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "STANDON": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+        }
+        self.load_cbf_domain_data()
 
         self._arpa = arpa(
             safety_radius_m=self._safety_radius_m,
@@ -112,6 +145,28 @@ class colav_manager:
                 transform=self._transform,
                 t_tot=self.prediction_t,
             )
+
+    def update_cbf_domain_data(self):
+        if "cbf_domains" in self.websocket.received_data:
+            if self.cbf_domains == self.websocket.received_data["cbf_domains"]:
+                return
+            self.cbf_domains = self.websocket.received_data["cbf_domains"]
+            json_object = json.dumps(self.cbf_domains, indent=4)
+            with open("cbf_domains.json", "w") as outfile:
+                outfile.write(json_object) 
+
+    def load_cbf_domain_data(self):
+        # Opening JSON file
+        f = open("cbf_domains.json")
+
+        # returns JSON object as
+        # a dictionary
+        data = json.load(f)
+
+        # Iterating through the json
+        for key in data.keys():
+            self.cbf_domains[key] = data[key] 
+        f.close()
 
     def compose_encounters_message(self):
         vessel_ids = self._encounter_classifiers.keys()
@@ -256,6 +311,7 @@ class colav_manager:
         Returns:
             bool: True if data is available for ARPA and CBF computation, False otherwise.
         """
+        self.update_cbf_domain_data()
         if self.dummy_vessel is not None:
             self.websocket.send(
                 json.dumps(
