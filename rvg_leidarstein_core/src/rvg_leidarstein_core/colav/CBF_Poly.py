@@ -54,7 +54,7 @@ class cbf_poly(cbf_4dof):
             max_rd (float, optional): Maximum value for rd. Default is 0.18.
             transform (object, optional): Object for coordinate transformations. Default is simulation_transform().
         """
-        super(cbf_4dof, self).__init__(
+        super(cbf_poly, self).__init__(
             safety_radius_m,
             k1=k1,
             k2=k2,
@@ -69,10 +69,26 @@ class cbf_poly(cbf_4dof):
             transform=transform,
         ) 
 
-    def set_domains(domain_data):
-        pass
+    def _sort_data(self):
+        p = self._gunn_data["p"]
+        u = self._gunn_data["u"]
+        z = self._gunn_data["z"]
+        tq = self._gunn_data["tq"]
+        po = np.zeros((2, self._ais_data_len))
+        zo = np.zeros((2, self._ais_data_len))
+        uo = np.zeros((self._ais_data_len))
+        encounters = [None] * self._ais_data_len
 
-    def _process_data(self, p, u, z, tq, po, zo, uo, ret_var):
+        for idx, ais_item in enumerate(self._ais_data):
+            po[0, idx] = ais_item["po_x"]
+            po[1, idx] = ais_item["po_y"]
+            uo[idx] = ais_item["uo"]
+            zo[:, idx] = ais_item["zo"].T
+            encounters[idx] = ais_item["encounter"]
+
+        return p, u, z, tq, po, zo, uo, encounters
+    
+    def _process_data(self, domains, encounter_data, p, u, z, tq, po, zo, uo, ret_var):
         """
         Process the data for control barrier function calculation.
 

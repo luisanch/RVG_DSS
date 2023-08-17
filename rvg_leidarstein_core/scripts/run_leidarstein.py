@@ -5,7 +5,9 @@ from time import sleep, time
 import argparse
 from multiprocessing import Process, get_context
 from rvg_leidarstein_core.colav.colav_manager import colav_manager
-from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
+from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import (
+    rvg_leidarstein_websocket,
+)
 
 parser = argparse.ArgumentParser(description="File opening script")
 parser.add_argument("-f", "--file", help="Path to the log file to open")
@@ -56,11 +58,15 @@ if __name__ == "__main__":
             if time() > colav_manager._timeout and colav_manager._running:
                 start = time()
                 if colav_manager.update():
-                    p, u, z, tq, po, zo, uo = colav_manager.sort_cbf_data()
-
+                    # remember to add ocnidtion here for diff cbfs
+                    p, u, z, tq, po, zo, uo, encounters = colav_manager.sort_cbf_data()
+                    domains = colav_manager.cbf_domains
+                    print(encounters)
                     # CBF computation is run in a separate process
                     cbf_process = Process(
-                        target=process_cbf_data, args=(p, u, z, tq, po, zo, uo, q)
+                        # here too
+                        target=process_cbf_data,
+                        args=(domains, encounters, p, u, z, tq, po, zo, uo, q),
                     )
                     cbf_process.start()
                     ret_var = q.get()
