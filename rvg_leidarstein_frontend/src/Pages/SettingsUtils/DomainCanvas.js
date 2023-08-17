@@ -15,7 +15,7 @@ function DomainCanvas(props) {
   });
   const [previewLine, setPreviewLine] = useState(null);
   const canvasSize = 400;
-  const gridFactor = 6;
+  const gridFactor = 8;
 
   const handleCanvasClick = (e) => {
     if (previewLine) {
@@ -48,18 +48,24 @@ function DomainCanvas(props) {
   const calculatePerpendicularLine = (canvasSize, x, y) => {
     const centerX = canvasSize / 2;
     const centerY = canvasSize / 2;
+    const length = canvasSize; // Set line length to canvas height
+
+    let endX1 = x;
+    let endY1 = y + length;
+    let endX2 = x;
+    let endY2 = y - length;
 
     const slope = (centerY - y) / (centerX - x);
-    const perpendicularSlope = -1 / slope;
+    if (slope != 0) {
+      const perpendicularSlope = -1 / slope;
 
-    const length = canvasSize; // Set line length to canvas height
-    const endX1 =
-      x + length / Math.sqrt(1 + perpendicularSlope * perpendicularSlope);
-    const endY1 = y + perpendicularSlope * (endX1 - x);
-    const endX2 =
-      x - length / Math.sqrt(1 + perpendicularSlope * perpendicularSlope);
-    const endY2 = y - perpendicularSlope * (endX1 - x);
-
+      endX1 =
+        x + length / Math.sqrt(1 + perpendicularSlope * perpendicularSlope);
+      endY1 = y + perpendicularSlope * (endX1 - x);
+      endX2 =
+        x - length / Math.sqrt(1 + perpendicularSlope * perpendicularSlope);
+      endY2 = y - perpendicularSlope * (endX1 - x);
+    } 
     return { startX: x, startY: y, endX1, endY1, endX2, endY2 };
   };
 
