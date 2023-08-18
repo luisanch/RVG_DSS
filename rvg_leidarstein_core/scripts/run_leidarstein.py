@@ -21,7 +21,7 @@ gunnerus_mmsi = "258342000"
 # Initialize ColavManager
 colav_manager = colav_manager(
     enable=True,
-    update_interval=10,
+    update_interval=5,
     websocket=websocket,
     gunnerus_mmsi=gunnerus_mmsi,
     dummy_gunnerus=None,

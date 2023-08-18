@@ -37,6 +37,7 @@ class cbf_poly(cbf_4dof):
         rd_max=1,
         max_rd=0.18,
         transform=simulation_transform(),
+        hyst_w=0.00000001,
     ):
         """
         Initialize the cbf_4dof object with the specified parameters.
@@ -69,6 +70,7 @@ class cbf_poly(cbf_4dof):
             max_rd=max_rd,
             transform=transform,
         )
+        self._hyst_w = hyst_w
 
     def _sort_data(self):
         p = self._gunn_data["p"]
@@ -97,14 +99,62 @@ class cbf_poly(cbf_4dof):
         dq = np.array(domain["d"]) * vessel_length
         tq_d = np.zeros((2, domain_len))
 
-        course_o = math.atan(zo_init[0] / zo_init[1])
+        if zo_init[1] == 0:
+            course_o = np.sign(zo_init[0]) * math.pi / 2
+        else:
+            course_o = math.atan(zo_init[0] / zo_init[1])
+
         z_list = zip(domain["z1"], domain["z2"])
         for idx, z in enumerate(z_list):
-            angle = math.atan(z[0] / z[1])
+            if z[1] == 0:
+                course_o = np.sign(z[0]) * math.pi / 2
+            else:
+                angle = math.atan(z[0] / z[1])
+
             rot = angle + course_o
             tq_d[0][idx] = math.sin(rot)
             tq_d[1][idx] = math.cos(rot)
         return tq_d, dq
+
+    def _select_active_constraint(
+        self, tq_d, dq, pe, u, uo, z, zo, B1_p, B2_p, h_p, rd_n
+    ):
+        # choose which of the half plane constraints should be enforced at any
+        # given time for the encounter
+        B1 = dq.T - (tq_d.T @ (pe)).flatten()
+        B1_dot = (-tq_d.T @ (u * z - uo * zo)).flatten()
+        B2 = B1_dot + (1 / self._gamma_1) * B1
+        initializing = False
+
+        if B1_p is None or B2_p is None:
+            initializing = True
+            B1_p = B1[0]
+            B2_p = B2[0]
+
+        if B1_p > 0:
+            max_B1 = B1_p
+        else:
+            max_B1 = 0
+
+        H1 = np.where(B1 <= max_B1)
+        if initializing:
+            H2 = np.where(B2 <= B2_p)
+        else:
+            H2 = np.where(B2 <= B2_p - self._hyst_w)
+        H = np.intersect1d(H1, H2)
+
+        if H.size > 1:
+            h = H[0]
+        elif H.size == 0:
+            h = h_p
+        else:
+            h = H
+
+        LfB2 = (1 / self._gamma_1) * B1_dot[h]
+        LgB2 = -tq_d[:, h].T @ (u * self._S @ z)
+        B2_dot = (LgB2 * rd_n) + LfB2
+
+        return B1[h], B1_dot[h], B2[h], B2_dot, LfB2, LgB2, h
 
     def _process_data(
         self, domains, encounters, vessels_len, p, u, z, tq, po, zo, uo, ret_var
@@ -130,7 +180,7 @@ class cbf_poly(cbf_4dof):
         maneuver_start = None
 
         t = 0
-        h_p = np.zeros((2, self._hist_len))
+        hist_p = np.zeros((2, self._hist_len))
 
         po_dot = np.multiply(zo, uo)
         po_vec = (
@@ -146,32 +196,45 @@ class cbf_poly(cbf_4dof):
         azi, revs = self.infer_azi_revs(u, z)
         thrust_state = np.array([azi, revs])
         x = np.concatenate((eta, nu, thrust_state))
+        B1 = None
+        B2 = None
+        encounter = None
+        h = None
+
         for t in range(self._hist_len):
             if not self._running:
                 return None
-            h_p[:, t] = p.T
+            hist_p[:, t] = p.T
             rd_n = self._get_nominal_control(z, tq)
             pe = p - po_vec[:, t].reshape(2, -1, order="F")
             pe_norm = np.linalg.norm(pe, axis=0)
             closest = np.argmin(pe_norm)
+
+            if encounters[closest] != encounter:
+                # reset for new domain
+                B1 = None
+                B2 = None
+
             encounter = encounters[closest]  # get encounter type
             domain = domains[encounter]
             vessel_len = vessels_len[closest]
             ei = pe[:, closest].reshape((2, 1))
             zi = zo[:, closest].reshape((2, 1))
             tq_d, dq = self._apply_domain(domain, vessel_len, zi)
-            print(tq_d, dq)
             ui = uo[closest]
-            B1 = self._safety_radius_m
-            LfB1 = -(ei.T @ (u * z - ui * zi))
-            B2 = LfB1 + (1 / self._gamma_1) * B1
-            LfB2 = (
-                ((ei.T @ (u * z - ui * zi)) ** 2)
-                - (np.linalg.norm((u * z - ui * zi), axis=0) ** 2)
-                + (1 / self._gamma_1) * LfB1
+            (B1, _, B2, B2_dot, LfB2, LgB2, h) = self._select_active_constraint(
+                tq_d=tq_d,
+                dq=dq,
+                pe=ei,
+                u=u,
+                uo=ui,
+                z=z,
+                zo=zi,
+                B1_p=B1,
+                B2_p=B2,
+                h_p=h,
+                rd_n=rd_n,
             )
-            LgB2 = -u * ei.T @ self._S @ z
-            B2_dot = LfB2 + LgB2 * rd_n
 
             if B2_dot <= -(1 / self._gamma_2) * B2:
                 rd = rd_n
@@ -196,6 +259,6 @@ class cbf_poly(cbf_4dof):
             start_maneuver_at = start_time + maneuver_start
         else:
             start_maneuver_at = -1
-        cbf_data = {"p": h_p, "maneuver_start": start_maneuver_at}
+        cbf_data = {"p": hist_p, "maneuver_start": start_maneuver_at}
         ret_var.put(cbf_data)
         return cbf_data
