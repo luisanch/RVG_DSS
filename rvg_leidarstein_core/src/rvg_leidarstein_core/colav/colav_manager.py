@@ -241,6 +241,8 @@ class colav_manager:
             if arpa_entry["mmsi"] in self._encounter_classifiers:
                 id = arpa_entry["mmsi"]
                 arpa_entry["encounter"] = self._encounter_classifiers[id].encounter.id
+                arpa_entry["length"] = 50 #entry points for width and bredth
+                arpa_entry["width"] = 50 #entry points for width and bredth
         return arpa_data
 
     def sort_cbf_data(self):

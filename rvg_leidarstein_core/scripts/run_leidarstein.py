@@ -59,14 +59,35 @@ if __name__ == "__main__":
                 start = time()
                 if colav_manager.update():
                     # remember to add ocnidtion here for diff cbfs
-                    p, u, z, tq, po, zo, uo, encounters = colav_manager.sort_cbf_data()
+                    (
+                        p,
+                        u,
+                        z,
+                        tq,
+                        po,
+                        zo,
+                        uo,
+                        encounters,
+                        vessels_len,
+                    ) = colav_manager.sort_cbf_data()
                     domains = colav_manager.cbf_domains
-                    print(encounters)
                     # CBF computation is run in a separate process
                     cbf_process = Process(
                         # here too
                         target=process_cbf_data,
-                        args=(domains, encounters, p, u, z, tq, po, zo, uo, q),
+                        args=(
+                            domains,
+                            encounters,
+                            vessels_len,
+                            p,
+                            u,
+                            z,
+                            tq,
+                            po,
+                            zo,
+                            uo,
+                            q,
+                        ),
                     )
                     cbf_process.start()
                     ret_var = q.get()

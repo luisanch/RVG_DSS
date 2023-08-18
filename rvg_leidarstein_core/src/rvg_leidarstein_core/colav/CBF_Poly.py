@@ -22,6 +22,7 @@ class cbf_poly(cbf_4dof):
     The 'cbf_4dof' class is a subclass of the 'cbf' class and provides control
     barrier functionality for a four-degree-of-freedom (4DOF) system.
     """
+
     def __init__(
         self,
         safety_radius_m,
@@ -33,7 +34,7 @@ class cbf_poly(cbf_4dof):
         gamma_2=40,
         gamma_1=0.2,
         t_tot=600,
-        rd_max=1, 
+        rd_max=1,
         max_rd=0.18,
         transform=simulation_transform(),
     ):
@@ -50,7 +51,7 @@ class cbf_poly(cbf_4dof):
             gamma_2 (float, optional): CBF parameter gamma_2. Default is 40.
             gamma_1 (float, optional): CBF parameter gamma_1. Default is 0.2.
             t_tot (float, optional): Total time for CBF calculation. Default is 600 seconds.
-            rd_max (float, optional): Maximum value for nominal control rd. Default is 1. 
+            rd_max (float, optional): Maximum value for nominal control rd. Default is 1.
             max_rd (float, optional): Maximum value for rd. Default is 0.18.
             transform (object, optional): Object for coordinate transformations. Default is simulation_transform().
         """
@@ -64,10 +65,10 @@ class cbf_poly(cbf_4dof):
             gamma_2=gamma_2,
             gamma_1=gamma_1,
             t_tot=t_tot,
-            rd_max=rd_max, 
+            rd_max=rd_max,
             max_rd=max_rd,
             transform=transform,
-        ) 
+        )
 
     def _sort_data(self):
         p = self._gunn_data["p"]
@@ -78,6 +79,7 @@ class cbf_poly(cbf_4dof):
         zo = np.zeros((2, self._ais_data_len))
         uo = np.zeros((self._ais_data_len))
         encounters = [None] * self._ais_data_len
+        vessels_len = [None] * self._ais_data_len
 
         for idx, ais_item in enumerate(self._ais_data):
             po[0, idx] = ais_item["po_x"]
@@ -85,10 +87,28 @@ class cbf_poly(cbf_4dof):
             uo[idx] = ais_item["uo"]
             zo[:, idx] = ais_item["zo"].T
             encounters[idx] = ais_item["encounter"]
+            vessels_len[idx] = ais_item["length"]
 
-        return p, u, z, tq, po, zo, uo, encounters
-    
-    def _process_data(self, domains, encounter_data, p, u, z, tq, po, zo, uo, ret_var):
+        return p, u, z, tq, po, zo, uo, encounters, vessels_len
+
+    def _apply_domain(self, domain, vessel_length, zo_init):
+        # apply the selected domain to the own vessel
+        domain_len = len(domain["d"])
+        dq = np.array(domain["d"]) * vessel_length
+        tq_d = np.zeros((2, domain_len))
+
+        course_o = math.atan(zo_init[0] / zo_init[1])
+        z_list = zip(domain["z1"], domain["z2"])
+        for idx, z in enumerate(z_list):
+            angle = math.atan(z[0] / z[1])
+            rot = angle + course_o
+            tq_d[0][idx] = math.sin(rot)
+            tq_d[1][idx] = math.cos(rot)
+        return tq_d, dq
+
+    def _process_data(
+        self, domains, encounters, vessels_len, p, u, z, tq, po, zo, uo, ret_var
+    ):
         """
         Process the data for control barrier function calculation.
 
@@ -126,7 +146,6 @@ class cbf_poly(cbf_4dof):
         azi, revs = self.infer_azi_revs(u, z)
         thrust_state = np.array([azi, revs])
         x = np.concatenate((eta, nu, thrust_state))
-
         for t in range(self._hist_len):
             if not self._running:
                 return None
@@ -135,19 +154,23 @@ class cbf_poly(cbf_4dof):
             pe = p - po_vec[:, t].reshape(2, -1, order="F")
             pe_norm = np.linalg.norm(pe, axis=0)
             closest = np.argmin(pe_norm)
+            encounter = encounters[closest]  # get encounter type
+            domain = domains[encounter]
+            vessel_len = vessels_len[closest]
             ei = pe[:, closest].reshape((2, 1))
-            norm_ei = pe_norm[closest]
             zi = zo[:, closest].reshape((2, 1))
+            tq_d, dq = self._apply_domain(domain, vessel_len, zi)
+            print(tq_d, dq)
             ui = uo[closest]
-            B1 = self._safety_radius_m - norm_ei
-            LfB1 = -(ei.T @ (u * z - ui * zi)) / norm_ei
+            B1 = self._safety_radius_m
+            LfB1 = -(ei.T @ (u * z - ui * zi))
             B2 = LfB1 + (1 / self._gamma_1) * B1
             LfB2 = (
-                ((ei.T @ (u * z - ui * zi)) ** 2) / norm_ei**3
-                - (np.linalg.norm((u * z - ui * zi), axis=0) ** 2) / norm_ei
+                ((ei.T @ (u * z - ui * zi)) ** 2)
+                - (np.linalg.norm((u * z - ui * zi), axis=0) ** 2)
                 + (1 / self._gamma_1) * LfB1
             )
-            LgB2 = (-u * ei.T @ self._S @ z) / norm_ei
+            LgB2 = -u * ei.T @ self._S @ z
             B2_dot = LfB2 + LgB2 * rd_n
 
             if B2_dot <= -(1 / self._gamma_2) * B2:
