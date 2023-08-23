@@ -30,7 +30,7 @@ function App() {
   // State to manage application settings
   const [settings, setSettings] = useState({
     showHitbox: true,
-    showAllTooltips: true,
+    showAllTooltips: false,
     shortTooltips: true,
     navigationMode: false,
     showSimControls: false,

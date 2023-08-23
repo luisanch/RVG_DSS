@@ -13,6 +13,7 @@ from rvg_leidarstein_core.simulation.simulation_transform import simulation_tran
 from .ARPA import arpa
 from .CBF import cbf
 from .CBF_4DOF import cbf_4dof
+from .CBF_Poly import cbf_poly
 from .encounter_classifier import encounter_classifier
 import json
 import time
@@ -25,7 +26,7 @@ class colav_manager:
         self,
         enable=True,
         update_interval=1,
-        safety_radius_m=200,
+        safety_radius_m=25,
         safety_radius_tol=1.5,
         max_d_2_cpa=2000,
         gunnerus_mmsi="",
@@ -33,7 +34,7 @@ class colav_manager:
         dummy_gunnerus=None,
         dummy_vessel=None,
         print_comp_t=False,
-        cbf_type="4dof",
+        cbf_type="poly",
         prediction_t=600,
     ):
         """
@@ -59,6 +60,7 @@ class colav_manager:
 
         self.uni_cbf = "uni"
         self.dof4_cbf = "4dof"
+        self.poly_cbf = "poly"
         self._cbf_type = cbf_type
         self._cbf_message_id = "cbf"
         self._arpa_message_id = "arpa"
@@ -89,6 +91,39 @@ class colav_manager:
         self._d_exit_low_cpa = safety_radius_m * 2
         self._t_exit_low_cpa = 0
         self._t_exit_up_cpa = 650
+        self.cbf_domains = {
+            "SAFE": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "OVERTAKING_STAR": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "OVERTAKING_PORT": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "HEADON": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "GIVEWAY": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+            "STANDON": {
+                "d": [],
+                "z1": [],
+                "z2": [],
+            },
+        }
+        self.load_cbf_domain_data()
 
         self._arpa = arpa(
             safety_radius_m=self._safety_radius_m,
@@ -106,12 +141,42 @@ class colav_manager:
                 k3=0.5,
                 t_tot=self.prediction_t,
             )
+        elif self._cbf_type == self.poly_cbf:
+            self._cbf = cbf_poly(
+                safety_radius_m=self._safety_radius_m,
+                transform=self._transform,
+                k2=0.5,
+                k3=0.5,
+                t_tot=self.prediction_t,
+            )
         else:
             self._cbf = cbf(
                 safety_radius_m=self._safety_radius_m,
                 transform=self._transform,
                 t_tot=self.prediction_t,
             )
+
+    def update_cbf_domain_data(self):
+        if "cbf_domains" in self.websocket.received_data:
+            if self.cbf_domains == self.websocket.received_data["cbf_domains"]:
+                return
+            self.cbf_domains = self.websocket.received_data["cbf_domains"]
+            json_object = json.dumps(self.cbf_domains, indent=4)
+            with open("cbf_domains.json", "w") as outfile:
+                outfile.write(json_object)
+
+    def load_cbf_domain_data(self):
+        # Opening JSON file
+        f = open("cbf_domains.json")
+
+        # returns JSON object as
+        # a dictionary
+        data = json.load(f)
+
+        # Iterating through the json
+        for key in data.keys():
+            self.cbf_domains[key] = data[key]
+        f.close()
 
     def compose_encounters_message(self):
         vessel_ids = self._encounter_classifiers.keys()
@@ -170,6 +235,15 @@ class colav_manager:
         for key in ais_keys:
             if key not in self._encounter_classifiers:
                 del self._encounter_classifiers[key]
+
+    def augment_arpa_data(self, arpa_data):
+        for arpa_entry in arpa_data:
+            if arpa_entry["mmsi"] in self._encounter_classifiers:
+                id = arpa_entry["mmsi"]
+                arpa_entry["encounter"] = self._encounter_classifiers[id].encounter.id
+                arpa_entry["length"] = 50 #entry points for width and bredth
+                arpa_entry["width"] = 50 #entry points for width and bredth
+        return arpa_data
 
     def sort_cbf_data(self):
         """
@@ -256,6 +330,7 @@ class colav_manager:
         Returns:
             bool: True if data is available for ARPA and CBF computation, False otherwise.
         """
+        self.update_cbf_domain_data()
         if self.dummy_vessel is not None:
             self.websocket.send(
                 json.dumps(
@@ -269,13 +344,16 @@ class colav_manager:
 
         if data_is_available:
             self._update_encounter_classifiers(arpa_gunn_data, arpa_data)
+
             converted_arpa_data = self._arpa.convert_arpa_params(
                 arpa_data, arpa_gunn_data
             )
+
             self.websocket.send(
                 self._compose_colav_msg(converted_arpa_data, self._arpa_message_id)
             )
             self.websocket.send(self.compose_encounters_message())
+            arpa_data = self.augment_arpa_data(arpa_data)
             self._cbf.update_cbf_data(arpa_gunn_data, arpa_data)
         return data_is_available
 
