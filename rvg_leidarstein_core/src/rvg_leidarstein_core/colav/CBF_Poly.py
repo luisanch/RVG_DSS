@@ -93,24 +93,84 @@ class cbf_poly(cbf_4dof):
 
         return p, u, z, tq, po, zo, uo, encounters, vessels_len
 
+    def convert_data(self, cbf_data):
+        """
+        Convert the computed control barrier function data to geographic coordinates.
+
+        Parameters:
+            cbf_data (dict): The dictionary containing the computed control barrier function data.
+
+        Returns:
+            dict: A dictionary containing the converted geographic coordinates.
+        """
+        lat_o = self._gunn_data["lat"]
+        lon_o = self._gunn_data["lon"]
+        geo = []
+        converted_data = {}
+        for col in range(cbf_data["p"].shape[1]):
+            x = cbf_data["p"][0, col]
+            y = cbf_data["p"][1, col]
+            lat, lon = self._transform.xyz_to_coords(x, y, lat_o, lon_o)
+            geo.append([lon, lat])
+        converted_data["cbf"] = geo
+        converted_data["maneuver_start"] = cbf_data["maneuver_start"]
+        converted_data["domains"] = []
+
+        for line_group in cbf_data["domain_lines"]:
+            converted_line_group = []
+
+            for line in line_group:
+                x1 = line["x1"]
+                x2 = line["x2"]
+                y1 = line["y1"]
+                y2 = line["y2"]
+                lat1, lon1 = self._transform.xyz_to_coords(x1, y1, lat_o, lon_o)
+                lat2, lon2 = self._transform.xyz_to_coords(x2, y2, lat_o, lon_o)
+                converted_line_group.append([[lon1, lat1], [lon2, lat2]])
+
+            converted_data["domains"].append(converted_line_group)
+        return converted_data
+
+    def _get_translated_domains(self, po, zo, encounters, domains, vessels_len):
+        domain_lines = []
+        for idx, encounter in enumerate(encounters):
+            domain = domains[encounter]
+            len = vessels_len[idx]
+            pi = po[:, idx]
+            ds = np.array(domain["d"]) * len
+            zo_init = zo[:, idx]
+
+            course_o = math.atan2(zo_init[0], zo_init[1])
+
+            z_list = zip(domain["z1"], domain["z2"])
+            lines = [] 
+
+            for jdx, z in enumerate(z_list):
+                angle = math.atan2(z[0], z[1]) 
+                d = ds[jdx]
+                rot = angle + course_o
+                sx = pi[0] + d * math.sin(rot)
+                sy = pi[1] + d * math.cos(rot) 
+                slope = -(sx - pi[0]) / (sy - pi[1])
+                ex1 = sx + (len * 2) / math.sqrt(1 + slope * slope)
+                ey1 = sy + slope * (ex1 - sx)
+                ex2 = sx - (len * 2) / math.sqrt(1 + slope * slope)
+                ey2 = sy - slope * (ex1 - sx)
+                line = {"x1": ex1, "y1": ey1, "x2": ex2, "y2": ey2}
+                lines.append(line)
+            domain_lines.append(lines)
+
+        return domain_lines
+
     def _apply_domain(self, domain, vessel_length, zo_init):
         # apply the selected domain to the own vessel
         domain_len = len(domain["d"])
         dq = np.array(domain["d"]) * vessel_length
         tq_d = np.zeros((2, domain_len))
-
-        if zo_init[1] == 0:
-            course_o = np.sign(zo_init[0]) * math.pi / 2
-        else:
-            course_o = math.atan(zo_init[0] / zo_init[1])
-
+        course_o = math.atan2(zo_init[0], zo_init[1])
         z_list = zip(domain["z1"], domain["z2"])
         for idx, z in enumerate(z_list):
-            if z[1] == 0:
-                course_o = np.sign(z[0]) * math.pi / 2
-            else:
-                angle = math.atan(z[0] / z[1])
-
+            angle = math.atan2(z[0], z[1])
             rot = angle + course_o
             tq_d[0][idx] = math.sin(rot)
             tq_d[1][idx] = math.cos(rot)
@@ -259,6 +319,13 @@ class cbf_poly(cbf_4dof):
             start_maneuver_at = start_time + maneuver_start
         else:
             start_maneuver_at = -1
-        cbf_data = {"p": hist_p, "maneuver_start": start_maneuver_at}
+        translated_domains = self._get_translated_domains(
+            po, zo, encounters, domains, vessels_len
+        )
+        cbf_data = {
+            "p": hist_p,
+            "maneuver_start": start_maneuver_at,
+            "domain_lines": translated_domains,
+        }
         ret_var.put(cbf_data)
         return cbf_data

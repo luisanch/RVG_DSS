@@ -5,6 +5,7 @@ import getArpa from "./Arpa";
 import getPaths from "./Paths";
 import getCourses from "./Courses";
 import getTooltips from "./Tooltips";
+import getDomains from "./Domains";
 import getVessels from "./Vessels";
 import Controls from "./Controls";
 import getManeuverCountdown from "./ManeuverCountdown";
@@ -37,6 +38,7 @@ const MyMap = (props) => {
   const [tipText, setTipText] = useState("");
   const [arpaObject, setArpaObject] = useState([]);
   const [cbfObject, setCBFObject] = useState([]);
+  const [cbfDomains, setCBFDomains] = useState([]);
   const [zoomScale, setZoomScale] = useState(1);
   const [cbfTimer, setCbftimer] = useState();
 
@@ -77,7 +79,10 @@ const MyMap = (props) => {
     cleanupCountdownARPA -= refreshInterval;
     if (cleanupCountdownARPA < 0) setArpaObject([]);
     cleanupCoundownCBF -= refreshInterval;
-    if (cleanupCoundownCBF < 0) setCBFObject([]);
+    if (cleanupCoundownCBF < 0) {
+      setCBFObject([]);
+      setCBFDomains([]);
+    }
     setCbftimer(countdown.toFixed(2));
   }
 
@@ -107,7 +112,9 @@ const MyMap = (props) => {
 
     if (data.message_id.indexOf("cbf") === 0) {
       cleanupCoundownCBF = cleanupInterval;
+
       setCBFObject(data.data.cbf);
+      setCBFDomains(data.data.domains);
       const d = new Date();
       let time = d.getTime();
       countdown = Number(data.data.maneuver_start) - time / 1000;
@@ -153,6 +160,8 @@ const MyMap = (props) => {
   // Generate previous paths based on AIS data
   const listPreviousPaths = getPaths(aisData);
 
+  const listCbfDomains = getDomains(cbfDomains);
+
   // Generate countdown element for maneuver countdown
   const maneuverCountdown = getManeuverCountdown(
     mapCenter,
@@ -188,13 +197,14 @@ const MyMap = (props) => {
             styleCallback={(feature, hover) => {
               return {
                 fill: "#00000000",
-                strokeWidth: "4",
-                opacity: 0.8,
+                strokeWidth: "1",
+                opacity: 0.6,
                 stroke: "red",
                 r: "20",
               };
             }}
           />
+          {listCbfDomains}
           {listArpa}
           {listCourses}
           {listVessels}
