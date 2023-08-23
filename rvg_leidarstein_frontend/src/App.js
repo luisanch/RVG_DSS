@@ -35,6 +35,7 @@ function App() {
     navigationMode: false,
     showSimControls: false,
     simMode: "4dof",
+    showDomains: true,
   });
 
   // WebSocket connection using react-use-websocket hook

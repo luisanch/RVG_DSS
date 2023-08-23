@@ -2,8 +2,9 @@ import { GeoJson } from "pigeon-maps";
 import { getGeoLine } from "../utils";
 const domainColor = "black";
 // Function to generate travel paths based on AIS data
-function getDomains(cbfObject) {
-  if (cbfObject.length <= 0) {
+function getDomains(cbfObject, settings) {
+  const show = settings.showDomains;
+  if (cbfObject.length <= 0 || !show) {
     return [];
   }
 
@@ -32,7 +33,7 @@ function getDomains(cbfObject) {
   });
 
   // Return the array of previous paths
-//   console.log(JSON.stringify(listDomains.flat(), null, 2))
+  //   console.log(JSON.stringify(listDomains.flat(), null, 2))
   return listDomains.flat();
 }
 

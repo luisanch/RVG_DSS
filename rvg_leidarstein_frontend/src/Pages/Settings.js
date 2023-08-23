@@ -50,6 +50,10 @@ export default function Settings(props) {
     update("showSimControls", event.target.checked);
   };
 
+  const handleShowDomains = (event) => {
+    update("showDomains", event.target.checked);
+  };
+
   const handleSimMode = (event) => {
     update("simMode", event.target.value);
     const message = {
@@ -125,6 +129,16 @@ export default function Settings(props) {
             />
           }
           label="Show Sim. Controls"
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              id="showdomains"
+              checked={settings.showDomains}
+              onChange={handleShowDomains}
+            />
+          }
+          label="Show CBF Domains"
         />
         {/* Select menu for data mode */}
         <FormControl sx={{ m: 1, minWidth: 120 }} size="small">

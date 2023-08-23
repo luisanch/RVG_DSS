@@ -160,7 +160,7 @@ const MyMap = (props) => {
   // Generate previous paths based on AIS data
   const listPreviousPaths = getPaths(aisData);
 
-  const listCbfDomains = getDomains(cbfDomains);
+  const listCbfDomains = getDomains(cbfDomains, settings);
 
   // Generate countdown element for maneuver countdown
   const maneuverCountdown = getManeuverCountdown(
