@@ -71,6 +71,7 @@ class cbf_poly(cbf_4dof):
             transform=transform,
         )
         self._hyst_w = hyst_w
+        self._len_factor = 2.5
 
     def _sort_data(self):
         p = self._gunn_data["p"]
@@ -143,19 +144,30 @@ class cbf_poly(cbf_4dof):
             course_o = math.atan2(zo_init[0], zo_init[1])
 
             z_list = zip(domain["z1"], domain["z2"])
-            lines = [] 
+            lines = []
 
             for jdx, z in enumerate(z_list):
-                angle = math.atan2(z[0], z[1]) 
+                angle = math.atan2(z[0], z[1])
                 d = ds[jdx]
                 rot = angle + course_o
                 sx = pi[0] + d * math.sin(rot)
-                sy = pi[1] + d * math.cos(rot) 
-                slope = -(sx - pi[0]) / (sy - pi[1])
-                ex1 = sx + (len * 2) / math.sqrt(1 + slope * slope)
-                ey1 = sy + slope * (ex1 - sx)
-                ex2 = sx - (len * 2) / math.sqrt(1 + slope * slope)
-                ey2 = sy - slope * (ex1 - sx)
+                sy = pi[1] + d * math.cos(rot)
+                slope = (sy - pi[1]) / (sx - pi[0])
+
+                line_length = len * self._len_factor
+
+                ex1 = sx
+                ey1 = sy + line_length
+                ex2 = sx
+                ey2 = sy - line_length
+
+                if slope != 0:
+                    p_slope = -1 / slope
+                    ex1 = sx + (line_length) / math.sqrt(1 + p_slope * p_slope)
+                    ey1 = sy + p_slope * (ex1 - sx)
+                    ex2 = sx - (line_length) / math.sqrt(1 + p_slope * p_slope)
+                    ey2 = sy - p_slope * (ex1 - sx)
+
                 line = {"x1": ex1, "y1": ey1, "x2": ex2, "y2": ey2}
                 lines.append(line)
             domain_lines.append(lines)
