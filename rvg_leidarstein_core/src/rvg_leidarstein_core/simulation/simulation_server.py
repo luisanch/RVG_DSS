@@ -205,6 +205,7 @@ class simulation_server:
             speed = self.transform.kn_to_mps(msg["speed"])
             x = math.sin(math.radians(msg["course"])) * speed * self._predicted_interval
             y = math.cos(math.radians(msg["course"])) * speed * self._predicted_interval
+            print(msg)
             lat_p, lon_p = self.transform.xyz_to_coords(
                 x, y, float(msg["lat"]), float(msg["lon"])
             )
@@ -378,17 +379,16 @@ class simulation_server:
 
             valid_ais_msg = (
                 message["message_id"].find("!AI") == 0
-                and message["message_id"].find("_ext_") != -1
                 and self._has_data(message)
             )
 
             if valid_ais_msg:
                 self._colav_manager.update_ais_data(message)
 
-            if message["message_id"] == "$PSIMSNS_ext":
+            if message["message_id"] == "$PSIMSNS":
                 self.rvg_heading = message["head_deg"]
 
-            if message["message_id"] == "$GPRMC_ext":
+            if message["message_id"] == "$GPRMC":
                 self._set_gunnerus_coords(message)
                 self._colav_manager.update_gunnerus_data(message)
                 self.rvg_state = message
@@ -432,6 +432,6 @@ class simulation_server:
         print("Simulation Client running...")
 
         while self._running:
-            if len(self._buffer):
+            if len(self._buffer): 
                 self._send(self._buffer[0])
                 self.pop_buffer(0)

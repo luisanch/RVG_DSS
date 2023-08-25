@@ -20,7 +20,7 @@ let messageHistory = [];
  */
 function App() {
   // Filters to process WebSocket data
-  const nmeaFilters = ["$GPGGA_ext", "$PSIMSNS_ext"];
+  const nmeaFilters = ["$GPGGA", "$PSIMSNS"];
   const aisFilter = "!AI";
   const colavFilter = "arpa";
   const cbfFilter = "cbf";
@@ -34,7 +34,7 @@ function App() {
     shortTooltips: true,
     navigationMode: false,
     showSimControls: false,
-    simMode: "4dof",
+    simMode: "rt",
     showDomains: true,
   });
 
@@ -78,7 +78,7 @@ function App() {
 
     if (
       nmeaFilters.includes(msg.message_id) ||
-      (msg.message_id.includes(aisFilter) && msg.message_id.includes("_ext")) ||
+      msg.message_id.includes(aisFilter) ||
       msg.message_id.includes(colavFilter) ||
       msg.message_id.includes(cbfFilter) ||
       msg.message_id.includes(encounterFilter)

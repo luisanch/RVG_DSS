@@ -100,8 +100,8 @@ class simulation_transform:
         return nm
 
     def mps_to_kn(self, mps):
-        kn = mps * 1.94384449
+        kn = float(mps) * 1.94384449
         return kn
 
     def kn_to_mps(self, knot):
-        return knot * self.mps_in_kn
+        return float(knot) * self.mps_in_kn

@@ -22,13 +22,11 @@ import os
 from datetime import datetime
 import easygui
 
-from .datastream_managers.tcp_datastream_manager import tcp_datastream_manager
-from .datastream_managers.log_datastream_manager import log_datastream_manager
 from .serializers.fast_serializer import fast_serializer
 from .colav.colav_manager import colav_manager
 from .simulation.simulation_manager import simulation_manager
 from .data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
-from .datastream_managers.Decrypter import decrypter
+from .datastream_managers.mqtt_datastream_manager import mqtt_datastream_manager
 
 
 class core:
@@ -90,8 +88,6 @@ class core:
         self.log_path = os.path.join(self.abs_path, "DataStreams", self.log_name)
         self.log_stream = (self.log_path, self.log_time, self.save_logs)
         self.colav_manager = colav_manager
-        self.key_path = os.path.join(self.abs_path, "rvg_dss", "key")
-        self.datastream_decrypter = decrypter(key_path=self.key_path)
         self.websocket = websocket
         # if True a log can be selected and used as the data source
         self.stream_saved_log = False
@@ -107,29 +103,20 @@ class core:
         self.suffixFilter = "_ext"
 
         # Select and initialize DatastreamManager
-        if self.stream_saved_log:
-            if self.log_file is None:
-                self.load_path = easygui.fileopenbox()
+        # if self.stream_saved_log:
+        #     # if self.log_file is None:
+        #     #     self.load_path = easygui.fileopenbox()
 
-            self.datastream_manager = log_datastream_manager(
-                path=self.load_path,
-                verbosity=self.verbosity,
-                decrypter=self.datastream_decrypter,
-                drop_ais_messages=self.drop_ais_message,
-                prefixFilter=self.prefixFilter,
-                suffixFilter=self.suffixFilter,
-            )
-        else:
-            self.datastream_manager = tcp_datastream_manager(
-                address=self.address,
-                buffer_size=self.buffer_size,
-                verbosity=self.verbosity,
-                log_stream=self.log_stream,
-                decrypter=self.datastream_decrypter,
-                drop_ais_messages=self.drop_ais_message,
-                prefixFilter=self.prefixFilter,
-                suffixFilter=self.suffixFilter,
-            )
+        #     # # self.datastream_manager = log_datastream_manager(
+        #     # #     path=self.load_path,
+        #     # #     verbosity=self.verbosity,
+        #     # #     decrypter=self.datastream_decrypter,
+        #     # #     drop_ais_messages=self.drop_ais_message,
+        #     # #     prefixFilter=self.prefixFilter,
+        #     # #     suffixFilter=self.suffixFilter,
+        #     # # )
+        # else:
+        self.datastream_manager = mqtt_datastream_manager()
 
         # Initialize Serializer
         self.headers_path = os.path.join(self.abs_path, "./serializers/headers")
@@ -208,7 +195,7 @@ class core:
             "pos_history": [[10.482652, 63.473148]],
         }
 
-        self.run_4DOF_sim = True
+        self.run_4DOF_sim = False
 
         self.simulation_manager = simulation_manager(
             datastream_manager=self.datastream_manager,

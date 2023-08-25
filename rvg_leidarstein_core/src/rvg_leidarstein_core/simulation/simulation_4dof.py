@@ -192,7 +192,7 @@ class simulation_4dof(simulation_server):
             "seq_num": self.seqnum,
             "src_id": 3,
             "src_name": "@10.0.8.10:34340",
-            "message_id": "$GPGGA_ext",
+            "message_id": "$GPGGA",
         }
         self.seqnum = self.seqnum + 1
         return msg
@@ -244,7 +244,7 @@ class simulation_4dof(simulation_server):
             "seq_num": self.seqnum,
             "src_id": 3,
             "src_name": "a10.0.8.1",
-            "message_id": "$GPRMC_ext",
+            "message_id": "$GPRMC",
         }
         self.seqnum = self.seqnum + 1
         return msg
@@ -292,7 +292,7 @@ class simulation_4dof(simulation_server):
             "seq_num": self.seqnum,
             "src_id": 1,
             "src_name": "@10.0.8.10:39816",
-            "message_id": "$PSIMSNS_ext",
+            "message_id": "$PSIMSNS",
         }
         self.seqnum = self.seqnum + 1
         return msg

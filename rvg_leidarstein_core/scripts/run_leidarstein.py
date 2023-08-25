@@ -29,7 +29,7 @@ colav_manager = colav_manager(
     safety_radius_m=200,
     safety_radius_tol=1.5,
     max_d_2_cpa=2000,
-    print_comp_t=True,
+    print_comp_t=False,
     prediction_t=300,
 )
 

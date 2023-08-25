@@ -12,7 +12,7 @@ overrides some of them to improve serialization performance.
 """
 
 from .serializer import serializer
-from ..datastream_managers.datastream_manager import datastream_manager
+from ..datastream_managers.mqtt_datastream_manager import mqtt_datastream_manager
 
 
 class fast_serializer(serializer):
@@ -20,7 +20,7 @@ class fast_serializer(serializer):
         self,
         save_headers,
         df_aliases,
-        datastream_manager=datastream_manager,
+        datastream_manager=mqtt_datastream_manager,
         overwrite_headers=False,
         verbose=False,
     ):
@@ -178,7 +178,7 @@ class fast_serializer(serializer):
         _message = self._buffer_data[-1][1]
         msg_id = self._buffer_data[-1][0]
 
-        if msg_id.find("!AI") == 0:
+        if msg_id.find("!") == 0:
             msg_atr, msg_values, unkown_msg_data, mmsi = self._get_ais_attributes(
                 _message
             )
@@ -192,7 +192,6 @@ class fast_serializer(serializer):
             metadata = None
 
         message = (msg_id, msg_atr, msg_values, unkown_msg_data, metadata)
-
         self._serialize_data(message)
         self._datstream_manager.pop_parsed_msg_list()
 
