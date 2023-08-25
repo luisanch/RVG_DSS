@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 
 from rvg_leidarstein_core.core import core
-from time import sleep, time
-import argparse
+from time import sleep, time 
 from multiprocessing import Process, get_context
 from rvg_leidarstein_core.colav.colav_manager import colav_manager
 from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import (
     rvg_leidarstein_websocket,
 )
-
-parser = argparse.ArgumentParser(description="File opening script")
-parser.add_argument("-f", "--file", help="Path to the log file to open")
-args = parser.parse_args()
 
 ws_enable = True
 ws_address = "ws://127.0.0.1:8000"
@@ -34,15 +29,11 @@ colav_manager = colav_manager(
 )
 
 # Initialize DataModel
-if args.file:
-    rvg_data = core(
-        websocket=websocket, colav_manager=colav_manager, log_file=args.file
-    )
-else:
-    rvg_data = core(
-        websocket=websocket,
-        colav_manager=colav_manager,
-    )
+
+rvg_data = core(
+    websocket=websocket,
+    colav_manager=colav_manager,
+)
 
 if __name__ == "__main__":
     process_cbf_data = colav_manager._cbf._process_data

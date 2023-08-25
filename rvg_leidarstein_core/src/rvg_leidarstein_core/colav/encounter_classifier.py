@@ -178,8 +178,7 @@ class encounter_classifier:
             rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts
         )
 
-        encounter = self._encounters[rbs][ss]
-        angle = int(np.rad2deg(atan(e - e_ts / n - n_ts)))
+        encounter = self._encounters[rbs][ss] 
 
         if type(encounter) is Encounters:
             return encounter

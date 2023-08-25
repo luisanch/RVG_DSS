@@ -17,7 +17,7 @@ from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
 from ..data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
 from ..colav.colav_manager import colav_manager
-from ..serializers.fast_serializer import fast_serializer
+from ..serializers.serializer import serializer
 from .simulation_server import simulation_server
 
 
@@ -36,9 +36,9 @@ class simulation_4dof(simulation_server):
     websocket : rvg_leidarstein_websocket
         The WebSocket object used to send AIS-like messages to the environment. 
         Default is rvg_leidarstein_websocket.
-    serializer : fast_serializer
+    serializer : serializer
         The serializer object used to handle the AIS-like messages for the simulation. 
-        Default is fast_serializer.
+        Default is serializer.
     distance_filter : float, optional
         The distance threshold used to filter AIS-like messages. Messages with positions 
         too far from the initial position
@@ -96,7 +96,7 @@ class simulation_4dof(simulation_server):
     def __init__(
         self,
         websocket=rvg_leidarstein_websocket,
-        serializer=fast_serializer,
+        serializer=serializer,
         distance_filter=None,
         predicted_interval=30,
         colav_manager=colav_manager,

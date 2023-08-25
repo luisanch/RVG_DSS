@@ -15,8 +15,7 @@ import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
 import {
-  FormControl,
-  InputLabel,
+  FormControl, 
   Select,
   MenuItem,
   FormHelperText,
@@ -147,8 +146,8 @@ export default function Settings(props) {
             value={settings.simMode}
             onChange={handleSimMode}
           >
-            <MenuItem value={"4dof"}>4 DOF Sim.</MenuItem>
             <MenuItem value={"rt"}>Real Time</MenuItem>
+            <MenuItem value={"4dof"}>4 DOF Sim.</MenuItem>
           </Select>
           <FormHelperText>Data Mode</FormHelperText>
         </FormControl>

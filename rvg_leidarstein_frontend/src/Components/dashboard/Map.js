@@ -89,11 +89,11 @@ const MyMap = (props) => {
   // Effect hook to handle incoming data and update state variables accordingly
   useEffect(() => {
     if (!data) return;
-    if (data.message_id === "$GPGGA_ext") {
+    if (data.message_id === "$GPGGA") {
       setGunnerusPos(data);
     }
 
-    if (data.message_id === "$PSIMSNS_ext") {
+    if (data.message_id === "$PSIMSNS") {
       setGunnerusHeading(data.head_deg);
     }
 

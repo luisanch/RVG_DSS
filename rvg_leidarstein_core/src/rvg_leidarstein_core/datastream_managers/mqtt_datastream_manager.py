@@ -1,4 +1,3 @@
-import sys
 import pynmea2
 import pyais
 import paho.mqtt.client as mqtt
@@ -17,11 +16,8 @@ class mqtt_datastream_manager:
         self.verbose = verbose
         self.broker_address = broker_address
         self.topic = topic
-        self.client = mqtt.Client(client_id=client_id)
-        # self.client.on_subscribe = self._on_subscribe
-        self.client.on_message = self._decode
-        # self.client.on_connect = self._on_connect
-        # self.client.on_disconnect = self._on_disconnect
+        self.client = mqtt.Client(client_id=client_id) 
+        self.client.on_message = self._decode 
         self.client.reconnect_delay_set(min_delay=1, max_delay=10)
         self.parsed_msg_list = []
         self.reconnect_delay = 2
@@ -37,25 +33,6 @@ class mqtt_datastream_manager:
     def __parse_ais(msg):
         decoded = pyais.decode(msg)
         return decoded
-
-    def _on_subscribe(self, client, obj, mid, granted_qos):
-        self.ready = True
-        print("Subscribed: " + str(mid) + " " + str(granted_qos))
-
-    def _on_disconnect(self, client, userdata, rc):
-        print("Disconnected from MQTT server with code: %s" % rc)
-        self.ready = False
-        while rc != 0:
-            time.sleep(self.reconnect_delay)
-            print("Reconnecting...")
-            rc = self.client.reconnect()
-
-    def _on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
-            print("connected OK Returned code=", rc)
-            print(self.client.subscribe(self.topic))
-        else:
-            print("Bad connection Returned code=", rc)
 
     def _decode(self, *args: Any, **kwds: Any) -> Any:
         _client = args[0]

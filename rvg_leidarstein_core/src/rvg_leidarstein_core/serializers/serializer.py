@@ -1,87 +1,84 @@
 #!/usr/bin/env python3
-
 """
-This is the 'serializer' module.
+Module: serializer
 
-It provides the Serializer class, which is responsible for serializing datastream messages into
-pandas DataFrames and optionally saving them to CSV files.
+Description:
+This module contains the FastSerializer class, which is a subclass of the Serializer class. 
+FastSerializer provides a fast and efficient method to serialize datastream messages using 
+DataFrame aliases and metadata.
 
-The Serializer takes a DatastreamManager instance as input and processes the parsed messages
-received from the datastream. It provides options to save the headers of the DataFrame and the
-DataFrame itself to separate CSV files.
+The FastSerializer class inherits attributes and methods from the Serializer class and 
+overrides some of them to improve serialization performance.
 """
 
-
-import pandas as pd
-from os import listdir
-from os.path import isfile, join
-
-
-class sorted_data(object):
-    def __getitem__(self, item):
-        return getattr(self, item)
+from dataclasses import dataclass
+from ..datastream_managers.mqtt_datastream_manager import mqtt_datastream_manager
 
 
 class serializer:
-    """
-    Serializer class handles the serialization of datastream messages into pandas
-    DataFrames.
-
-    The Serializer takes a DatastreamManager instance as input and processes the
-    parsed messages received from the datastream. It provides options to save the
-    headers of the DataFrame and the DataFrame itself to separate CSV files.
-
-    Args:
-        datastream_manager (DatastreamManager): The DatastreamManager instance to receive parsed messages from.
-        save_headers (tuple): A tuple containing a boolean flag for saving headers to CSV (True/False)
-                              and the path (str) to the CSV file where headers will be saved.
-        save_dataframes (tuple): A tuple containing a boolean flag for saving DataFrames to CSV (True/False)
-                                 and the path (str) to the directory where DataFrame CSV files will be saved.
-        df_aliases (dict): A dictionary mapping DataFrame names (aliases) to their corresponding parsed message tags.
-                           Example: {'df1': 'TAG1', 'df2': 'TAG2'}
-        overwrite_headers (bool): Whether to overwrite existing header CSV file or not. Default is False.
-        verbose (tuple): A tuple containing two boolean flags for verbose logging. The first flag is for log verbosity
-                         related to the log files ('save_headers' and 'save_dataframes'), and the second flag is for
-                         buffer verbosity, which shows messages being processed. Default is (False, False).
-
-    Attributes:
-        def_unk_atr_name (str): The name to be used for unknown attributes (not found in 'df_aliases').
-        metadata_atr_names (tuple): A tuple containing the attribute names for metadata information: unix_time, seq_num,
-                                    src_id, and src_name.
-    """
-
     def __init__(
         self,
-        datastream_manager,
-        save_headers,
-        save_dataframes,
         df_aliases,
-        overwrite_headers=False,
-        verbose=False,
+        datastream_manager=mqtt_datastream_manager,
     ):
+        """
+        Fast serializer for datastream messages.
+
+        This class extends the 'Serializer' class to provide faster serialization
+        of datastream messages. It is designed to work with a 'datastream_manager'
+        for receiving and parsing messages and creating DataFrames for serialization.
+
+        Args:
+            save_headers (tuple): A tuple containing two elements: a boolean
+                                indicating whether to save DataFrame headers or
+                                not, and the directory path where DataFrame
+                                headers should be saved as CSV files.
+            df_aliases (dict): A dictionary that maps DataFrame aliases (keys) to
+                                lists of attribute names (values). This mapping
+                                defines how DataFrame columns will be created and
+                                named during serialization.
+            datastream_manager (datastream_manager, optional): An instance of the
+                                'datastream_manager' class that will be used
+                                for receiving and parsing messages. Defaults to
+                                'datastream_manager'.
+             
+
+        Note:
+            If 'overwrite_headers' is set to False, the serializer will attempt
+            to load DataFrame headers from the specified directory during class
+            initialization. The DataFrame headers should be saved as CSV files
+            in that directory.
+
+        Attributes:
+            df_aliases (dict): A dictionary that maps DataFrame aliases to lists
+                                of attribute names.
+            def_unk_atr_name (str): The name for unknown attributes (used when
+                                mapping DataFrame columns).
+            bufferBusy (bool): A flag to indicate if the buffer is busy (during
+                                serialization).
+            _datastream_manager (datastream_manager): An instance of the 'datastream_manager'
+                                class used for receiving and parsing messages.
+            sorted_data (list): A list to store sorted data.
+            _running (bool): A flag to indicate whether the serializer is running
+                                or stopped.
+            
+            _buffer_data (list): A list to store parsed message data received from
+                                the datastream manager.
+            _overwrite_headers (bool): A boolean indicating whether to overwrite
+                                DataFrame headers if they already exist.
+        """
         # attribute aliases for incoming messages
         self.df_aliases = df_aliases
 
         # define name for unknown atribute
         self.def_unk_atr_name = "unknown_"
-
-        self._datastream_manager = datastream_manager
-        self.sorted_data = sorted_data()
+        self.bufferBusy = False
+        self._datstream_manager = datastream_manager
+        self.sorted_data = []
         self._running = False
-        self._save_headers = save_headers[0]
-        self._headers_path = save_headers[1]
-        self._save_df = save_dataframes[0]
-        self._dataframes_path = save_dataframes[1]
         self._buffer_data = datastream_manager.parsed_msg_list
-        self._overwrite_headers = overwrite_headers
-        self._log_verbose = verbose[0]
-        self._buffer_verbose = verbose[1]
-        self.metadata_atr_names = ("unix_time", "seq_num", "src_id", "src_name")
 
-        if not self._overwrite_headers:
-            self._load_headers()
-
-    def _get_nmea_attributes(self, nmea_object):
+    def _get_nmea_attributes(self, nmea_object, msg_id):
         """
         Get attributes and values from a parsed NMEA message object.
 
@@ -113,7 +110,20 @@ class serializer:
             msg_atr.append(name)
             msg_values.append(getattr(nmea_object, name))
 
-        return (msg_atr, msg_values, unkown_msg_data)
+        if len(unkown_msg_data) > 1:
+            msg_values.extend(unkown_msg_data)
+
+            for i, _ in enumerate(unkown_msg_data):
+                atr_name = self.def_unk_atr_name + str(i)
+                msg_atr.append(atr_name)
+
+        if msg_id in self.df_aliases:
+            alias_list = self.df_aliases[msg_id]
+            if len(alias_list) == len(msg_atr):
+                for i, alias in enumerate(alias_list):
+                    msg_atr[i] = alias
+
+        return (msg_atr, msg_values)
 
     def _get_ais_attributes(self, ais_object):
         """
@@ -139,45 +149,8 @@ class serializer:
         msg_atr = list(ais_dict.keys())
         mmsi = ais_dict["mmsi"]
 
-        return (msg_atr, msg_values, [], mmsi)
-
-    def _load_headers(self):
-        """
-        Load DataFrame headers from pkl files.
-
-        This method loads DataFrame headers from .pkl files located in the
-        directory specified by 'save_headers' during the class initialization.
-        The .pkl files should contain the headers (column names) of the DataFrames
-        that will be created during serialization. The headers are loaded into
-        DataFrame objects and stored as attributes in the 'sorted_data' object.
-        The attribute names are based on the names of the messages received.
-
-        Note:
-            This method is automatically called during class initialization unless
-            'overwrite_headers' is set to True.
-
-        Returns:
-            None
-        """
-        headers = []
-        names = []
-        dir_list = listdir(self._headers_path)
-
-        if len(dir_list) < 1:
-            return
-
-        print("Loading headers...")
-        for name in dir_list:
-            file = join(self._headers_path, name)
-            if isfile(file):
-                headers.append(file)
-                names.append(name.split(".")[0])
-
-        for name, file in zip(names, headers):
-            df = pd.read_pickle(file)
-            setattr(sorted_data, name, df)
-        print("Headers Loaded.")
-
+        return (msg_atr, msg_values, mmsi)
+    
     def stop(self):
         """
         Stop the serializer.
@@ -191,17 +164,90 @@ class serializer:
         self._running = False
         print("Serializer stopped.")
 
+    def _serialize_data(self, message):
+        """
+        Serialize a single datastream message.
+
+        This method takes a single datastream message in the form of a tuple and
+        serializes its attributes based on the provided DataFrame aliases and
+        metadata. The serialized message is added to the 'sorted_data' list.
+
+        Args:
+            message (tuple): A tuple containing the following elements:
+                             - msg_id (str): The message identifier.
+                             - msg_atr (list): A list of attribute names for the message.
+                             - msg_values (list): A list of attribute values for the message.
+                             - unkown_msg_data (list): A list of unknown message data (if any).
+                             - metadata (tuple, None): A tuple containing metadata information for the message
+                                                      (or None if no metadata is present).
+
+        Note:
+            This method is called internally during the serialization process
+            and should not be called directly.
+
+        """
+        msg_id, msg_atr, msg_values = message
+
+        # ToDo: Probably very inefficient
+        
+
+        # ToDo: awful, inefficient, do better check and skip redundancy
+        
+
+        message = dict(zip(msg_atr, msg_values))
+        message["message_id"] = msg_id
+        self.sorted_data.append(message)
+        return
+
+    def _serialize_buffered_message(self):
+        """
+        Serialize a buffered datastream message.
+
+        This method serializes a datastream message from the buffered data
+        (parsed_msg_list) of the datastream manager. The serialized message is
+        added to the 'sorted_data' list of the serializer.
+
+        Note:
+            This method is called internally during the serialization process
+            and should not be called directly.
+        """
+        if len(self._buffer_data) < 1:
+            self.bufferBusy = False 
+            return
+
+        self.bufferBusy = True
+        _message = self._buffer_data[-1][1]
+        msg_id = self._buffer_data[-1][0]
+
+        if msg_id.find("!") == 0:
+            msg_atr, msg_values, mmsi = self._get_ais_attributes(
+                _message
+            )
+            msg_id = msg_id + "_" + str(mmsi)
+        else:
+            msg_atr, msg_values = self._get_nmea_attributes(_message, msg_id)
+
+        message = (msg_id, msg_atr, msg_values)
+        self._serialize_data(message)
+        self._datstream_manager.pop_parsed_msg_list()
+
     def start(self):
         """
-        Start the serializer.
+        Start the Serializer.
 
-        This method sets the '_running' flag to True, enabling the serialization
-        process to start. The serializer will begin processing the parsed messages
-        received from the datastream manager and create DataFrames according to
-        the DataFrame aliases provided during class initialization.
+        This method starts the Serializer's serialization process. It
+        continuously calls the '_serialize_buffered_message' method to serialize
+        buffered datastream messages until the '_running' attribute is set to False.
 
-        Returns:
-            None
+        Note:
+            This method should be called after initializing the FastSerializer
+            to begin the serialization process.
+
         """
         self._running = True
-        print("Serializer running.")
+        print("FastSerializer running.")
+
+        while self._running:
+            self._serialize_buffered_message()
+        # ToDo: handle loose ends on terminating process.
+        print("FastSerializer stopped.")

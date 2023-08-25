@@ -11,7 +11,7 @@ import numpy as np
 from scipy.signal import butter, filtfilt
 import json
 from .simulation_transform import simulation_transform
-from ..serializers.fast_serializer import fast_serializer
+from ..serializers.serializer import serializer
 from ..data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
 from ..colav.colav_manager import colav_manager
 import math
@@ -22,7 +22,7 @@ class simulation_server:
     A server class for managing simulation data, transformations, and communication.
 
     Parameters:
-    - serializer: The serializer class to use for data serialization (Default: fast_serializer).
+    - serializer: The serializer class to use for data serialization (Default: serializer).
     - websocket: The WebSocket class for communication (Default: rvg_leidarstein_websocket).
     - distance_filter: A filter function for processing distance data (Default: None).
     - predicted_interval: The time interval for predicting future states (Default: 30 seconds).
@@ -53,7 +53,7 @@ class simulation_server:
 
     def __init__(
         self,
-        serializer=fast_serializer,
+        serializer=serializer,
         websocket=rvg_leidarstein_websocket,
         distance_filter=None,
         predicted_interval=30,
@@ -174,7 +174,7 @@ class simulation_server:
 
         """
         if self.gunnerus_lat is None or self.gunnerus_lon is None:
-            return True
+            return False
 
         if msg["message_id"].find("!AI") == 0:
             if self._has_data(msg):
@@ -186,7 +186,7 @@ class simulation_server:
 
                 return self.dist(p, q) < distance
 
-        return True
+        return False
 
     def _set_predicted_position(self, msg):
         """
@@ -205,7 +205,7 @@ class simulation_server:
             speed = self.transform.kn_to_mps(msg["speed"])
             x = math.sin(math.radians(msg["course"])) * speed * self._predicted_interval
             y = math.cos(math.radians(msg["course"])) * speed * self._predicted_interval
-            print(msg)
+
             lat_p, lon_p = self.transform.xyz_to_coords(
                 x, y, float(msg["lat"]), float(msg["lon"])
             )
@@ -336,6 +336,24 @@ class simulation_server:
         - str: The JSON-encoded message.
 
         """
+        return json.dumps({"type": msg_type, "content": msg}, default=str)
+
+    def _compose_ais_msg(self, msg, msg_type="datain"):
+        """
+        Compose a JSON message to be sent via the WebSocket.
+
+        This method prepares the incoming message (msg) to be sent via the WebSocket
+        as a JSON string. It sets the historical position information and the predicted
+        position for AIS messages, and then converts the message into a JSON format.
+
+        Parameters:
+        - msg (dict): The message dictionary to be composed.
+        - msg_type (str, optional): The type of the message. Default is "datain".
+
+        Returns:
+        - str: The JSON-encoded message.
+
+        """
         self._set_history(msg)
         self._set_predicted_position(msg)
         return json.dumps({"type": msg_type, "content": msg}, default=str)
@@ -371,28 +389,36 @@ class simulation_server:
         - message (dict): The message dictionary to be sent.
 
         """
-        if self._validate_coords(message, self.distance_filter):
-            json_msg = self._compose_msg(message)
-
+        if message["message_id"] == "$PSIMSNS":
+            self.rvg_heading = message["head_deg"]
             if self.websocket.enable:
+                json_msg = self._compose_msg(message)
                 self.websocket.send(json_msg)
 
-            valid_ais_msg = (
-                message["message_id"].find("!AI") == 0
-                and self._has_data(message)
+        if message["message_id"] == "$GPGGA":
+            if self.websocket.enable:
+                json_msg = self._compose_msg(message)
+                self.websocket.send(json_msg)
+
+        if message["message_id"] == "$GPRMC":
+            self._set_gunnerus_coords(message)
+            self._colav_manager.update_gunnerus_data(message)
+            self.rvg_state = message
+            if self.websocket.enable:
+                json_msg = self._compose_msg(message)
+                self.websocket.send(json_msg)
+
+        if self._validate_coords(message, self.distance_filter):
+            valid_ais_msg = message["message_id"].find("!") == 0 and self._has_data(
+                message
             )
 
             if valid_ais_msg:
                 self._colav_manager.update_ais_data(message)
 
-            if message["message_id"] == "$PSIMSNS":
-                self.rvg_heading = message["head_deg"]
-
-            if message["message_id"] == "$GPRMC":
-                self._set_gunnerus_coords(message)
-                self._colav_manager.update_gunnerus_data(message)
-                self.rvg_state = message
-                pass
+            if self.websocket.enable:
+                json_msg = self._compose_ais_msg(message)
+                self.websocket.send(json_msg)
 
     def pop_buffer(self, index=None):
         """
@@ -432,6 +458,6 @@ class simulation_server:
         print("Simulation Client running...")
 
         while self._running:
-            if len(self._buffer): 
+            if len(self._buffer):
                 self._send(self._buffer[0])
                 self.pop_buffer(0)

@@ -16,8 +16,7 @@ Classes:
 --------
 simulation_manager
 """
-from .simulation_server import simulation_server
-from .simulation_server_replay import simulation_server_replay
+from .simulation_server import simulation_server 
 from .simulation_4dof import simulation_4dof
 from threading import Thread
 
@@ -41,7 +40,7 @@ class simulation_manager:
         The distance threshold used for filtering incoming data.
 
     Colav_Manager : object
-        An instance of the collision avoidance manager used for collision avoidance 
+        An instance of the collision avoidance manager used for collision avoidance
         handling.
 
     rvg_init : dict
@@ -57,7 +56,7 @@ class simulation_manager:
         The predicted interval for simulation, in seconds. Default is 60.
 
     mode : str, optional
-        The simulation mode. Available options are "4dof", "replay", and "rt" 
+        The simulation mode. Available options are "4dof", "replay", and "rt"
         (real-time). Default is "4dof".
 
     Returns:
@@ -67,7 +66,6 @@ class simulation_manager:
 
     def __init__(
         self,
-        datastream_manager,
         serializer,
         websocket,
         distance_filter,
@@ -78,7 +76,6 @@ class simulation_manager:
         predicted_interval=60,
         mode="4dof",
     ):
-        self.datastream_manager = datastream_manager
         self.serializer = serializer
         self.websocket = websocket
         self.distance_filter = distance_filter
@@ -88,7 +85,6 @@ class simulation_manager:
         self.dt = dt
         self.predicted_interval = predicted_interval
         self.mode_4dof = "4dof"
-        self.mode_replay = "replay"
         self.mode_rt = "rt"
         self.mode = mode
         self.simulation_server = simulation_server
@@ -148,7 +144,7 @@ class simulation_manager:
         """
         Start the simulation server.
 
-        This method starts the simulation server by starting the thread responsible 
+        This method starts the simulation server by starting the thread responsible
         for running the simulation.
 
         Returns:
@@ -173,7 +169,7 @@ class simulation_manager:
         """
         Stop the simulation manager.
 
-        This method stops the simulation manager by setting the `running` flag to 
+        This method stops the simulation manager by setting the `running` flag to
         False and stopping the simulation server.
 
         Returns:
@@ -187,7 +183,7 @@ class simulation_manager:
         """
         Start the simulation manager.
 
-        This method starts the simulation manager, which continuously checks for 
+        This method starts the simulation manager, which continuously checks for
         changes in the data_mode received via WebSocket.
         If the data_mode changes, the simulation server type is updated accordingly.
 
@@ -230,16 +226,7 @@ class simulation_manager:
         --------
         None
         """
-        if mode == self.mode_replay:
-            self.simulation_server = simulation_server_replay(
-                log_datastream_manager=self.datastream_manager,
-                serializer=self.serializer,
-                websocket=self.websocket,
-                distance_filter=self.distance_filter,
-                predicted_interval=self.predicted_interval,
-                colav_manager=self.Colav_Manager,
-            )
-        elif mode == self.mode_4dof:
+        if mode == self.mode_4dof:
             self.simulation_server = simulation_4dof(
                 websocket=self.websocket,
                 serializer=self.serializer,
