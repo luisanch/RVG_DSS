@@ -22,6 +22,7 @@ from .colav.colav_manager import colav_manager
 from .simulation.simulation_manager import simulation_manager
 from .data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
 from .datastream_managers.mqtt_datastream_manager import mqtt_datastream_manager
+from .simulation.simulation_manager import RVG_Init
 
 
 class core:
@@ -89,38 +90,28 @@ class core:
         self.distance_filter = 1  # geodetic degree
 
         # dummy_gunnerus is now the origin for 4dof sim
-        self.dummy_gunnerus = {
-            "lat": 6326.3043,
-            "lat_dir": "E",
-            "lon": 1024.5395,
-            "lon_dir": "N",
-            "true_course": -40,
-            "spd_over_grnd": 0,
-            "revs": 100,
-            "azi_d": 0,
-        }
-
-        self.run_4DOF_sim = False
+        self.rvg_init = RVG_Init(
+            lat=6326.3043,
+            lat_dir="E",
+            lon=1024.5395,
+            lon_dir="N",
+            true_course=-40,
+            spd_over_grnd=0,
+            revs=100,
+            azi_d=0,
+        )
 
         self.simulation_manager = simulation_manager(
             serializer=self.serializer,
             websocket=self.websocket,
             distance_filter=self.distance_filter,
             Colav_Manager=self.colav_manager,
-            rvg_init=self.dummy_gunnerus,
+            rvg_init=self.rvg_init,
             tmax=1,
             dt=0.2,
             predicted_interval=60,
-            mode="4dof",
+            mode="rt",
         )
-
-        # Select 'Simulation' source: saved log, 4dof, or rt
-        if self.run_4DOF_sim:
-            self.simulation_manager.set_simulation_type(
-                self.simulation_manager.mode_4dof
-            )
-        else:
-            self.simulation_manager.set_simulation_type(self.simulation_manager.mode_rt)
 
         # Create new threads
         self.thread_websocket_receive = Thread(target=self.websocket.start)

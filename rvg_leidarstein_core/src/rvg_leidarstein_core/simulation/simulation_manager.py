@@ -16,9 +16,26 @@ Classes:
 --------
 simulation_manager
 """
-from .simulation_server import simulation_server 
+from .simulation_server import simulation_server
 from .simulation_4dof import simulation_4dof
 from threading import Thread
+from dataclasses import dataclass
+from pydantic import validate_arguments
+
+
+@validate_arguments
+@dataclass
+class RVG_Init:
+    """Class for keeping track of an item in inventory."""
+
+    lat: float
+    lat_dir: str
+    lon: float
+    lon_dir: str
+    spd_over_grnd: float
+    true_course: float
+    revs: float
+    azi_d: float
 
 
 class simulation_manager:
@@ -74,7 +91,7 @@ class simulation_manager:
         tmax=1,
         dt=0.2,
         predicted_interval=60,
-        mode="4dof",
+        mode="rt",
     ):
         self.serializer = serializer
         self.websocket = websocket
@@ -90,6 +107,7 @@ class simulation_manager:
         self.simulation_server = simulation_server
         self.running = False
         self.thread_sim_server = Thread(target=self.simulation_server.start)
+        self.set_simulation_type(self.mode)
 
     def _has_prop(self, msg, prop=""):
         """
@@ -129,16 +147,17 @@ class simulation_manager:
         dict
             The formatted message with updated values.
         """
-        revs = self.rvg_init["revs"]
-        azi = self.rvg_init["azi_d"]
-        msg = self.simulation_server.rvg_state
-        msg["lat"] = float(msg["lat"])
-        msg["lon"] = float(msg["lon"])
-        msg["true_course"] = float(head)
-        msg["spd_over_grnd"] = float(msg["spd_over_grnd"])
-        msg["azi_d"] = azi
-        msg["revs"] = revs
-        return msg
+        new_init = RVG_Init(
+            lat=msg.lat,
+            lat_dir=msg.lat_dir,
+            lon=msg.lon,
+            lon_dir=msg.lon_dir,
+            true_course=float(head),
+            spd_over_grnd=msg.spd_over_grnd,
+            revs=self.rvg_init.revs,
+            azi_d=self.rvg_init.azi_d,
+        )
+        return new_init
 
     def start_sim(self):
         """

@@ -39,7 +39,7 @@ class arpa:
             gunnerus_mmsi (str, optional): MMSI (Maritime Mobile Service Identity) of the reference vessel. Default is an empty string.
         """
         self._gunnerus_mmsi = gunnerus_mmsi
-        self._gunnerus_data = {}
+        self._gunnerus_data = None
         self._ais_data = {}
         self._safety_radius_m = safety_radius_m
         self._safety_radius_tol = safety_radius_tol
@@ -162,7 +162,7 @@ class arpa:
         Extract Gunnerus parameters for ARPA.
 
         Returns:
-            dict or None: Dictionary containing extracted Gunnerus parameters if 
+            dict or None: Dictionary containing extracted Gunnerus parameters if
             Gunnerus data is valid, None otherwise.
         """
         gunn_speed = None
@@ -170,18 +170,14 @@ class arpa:
 
         gunnerus_data = copy.deepcopy(self._gunnerus_data)
 
-        if not self._has_coords(self._gunnerus_data):
+        if self._gunnerus_data is None:
             return None
 
-        gunn_speed = gunnerus_data["spd_over_grnd"]
-        gunn_course = gunnerus_data["true_course"]
-        gunn_lat = self._transform.deg_2_dec(
-            float(gunnerus_data["lat"]), gunnerus_data["lat_dir"]
-        )
+        gunn_speed = gunnerus_data.spd_over_grnd
+        gunn_course = gunnerus_data.true_course
+        gunn_lat = self._transform.deg_2_dec(gunnerus_data.lat, gunnerus_data.lat_dir)
 
-        gunn_lon = self._transform.deg_2_dec(
-            float(gunnerus_data["lon"]), gunnerus_data["lon_dir"]
-        )
+        gunn_lon = self._transform.deg_2_dec(gunnerus_data.lon, gunnerus_data.lon_dir)
 
         z = np.array(
             [
@@ -219,12 +215,12 @@ class arpa:
         Calculate Closest Point of Approach (CPA) for an AIS vessel.
 
         Parameters:
-            gunn_data (dict): Dictionary containing data for the reference 
+            gunn_data (dict): Dictionary containing data for the reference
             vessel (Gunnerus).
             ais_data_item (dict): Dictionary containing extracted AIS parameters.
 
         Returns:
-            dict or None: Dictionary containing CPA data if CPA is valid, None 
+            dict or None: Dictionary containing CPA data if CPA is valid, None
             otherwise.
         """
         ux = float(gunn_data["ux"])
@@ -279,7 +275,7 @@ class arpa:
             ais_data_item (dict): Dictionary containing extracted AIS parameters.
 
         Returns:
-            dict or None: Dictionary containing safety parameters if vessel is 
+            dict or None: Dictionary containing safety parameters if vessel is
             within safety radius, None otherwise.
         """
         ux = float(gunn_data["ux"])
@@ -426,7 +422,7 @@ class arpa:
 
         Parameters:
             arpa_data (dict): Dictionary containing ARPA data with MMSI as keys.
-            gunn_data (dict): Dictionary containing data for the reference vessel 
+            gunn_data (dict): Dictionary containing data for the reference vessel
             (Gunnerus).
 
         Returns:

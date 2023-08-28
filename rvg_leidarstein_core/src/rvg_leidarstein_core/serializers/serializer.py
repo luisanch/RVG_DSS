@@ -12,7 +12,72 @@ overrides some of them to improve serialization performance.
 """
 
 from dataclasses import dataclass
+from pydantic import validate_arguments
+
+import datetime
+import decimal
 from ..datastream_managers.mqtt_datastream_manager import mqtt_datastream_manager
+
+
+@validate_arguments
+@dataclass
+class GPRMC:
+    """Class for keeping track of an item in inventory."""
+
+    timestamp: datetime.time
+    status: str
+    lat: float
+    lat_dir: str
+    lon: float
+    lon_dir: str
+    spd_over_grnd: float
+    true_course: float
+    datestamp: datetime.date
+    mag_variation: str
+    mag_var_dir: str
+    mode_indicator: str
+    nav_status: str
+    message_id: str
+
+
+@validate_arguments
+@dataclass
+class GPGGA:
+    timestamp: datetime.time
+    lat: float
+    lat_dir: str
+    lon: float
+    lon_dir: str
+    gps_qual: int
+    num_sats: str
+    horizontal_dil: str
+    altitude: float
+    altitude_units: str
+    geo_sep: str
+    geo_sep_units: str
+    age_gps_data: str
+    ref_station_id: str
+    message_id: str
+
+
+@validate_arguments
+@dataclass
+class PSIMSNS:
+    msg_type: str
+    timestamp: datetime.time
+    unknown_1: str
+    tcvr_num: str
+    tdcr_num: str
+    roll_deg: float
+    pitch_deg: float
+    heave_m: float
+    head_deg: float
+    empty_1: str
+    unknown_2: str
+    unknown_3: str
+    empty_2: str
+    checksum: str
+    message_id: str
 
 
 class serializer:
@@ -41,7 +106,7 @@ class serializer:
                                 'datastream_manager' class that will be used
                                 for receiving and parsing messages. Defaults to
                                 'datastream_manager'.
-             
+
 
         Note:
             If 'overwrite_headers' is set to False, the serializer will attempt
@@ -61,7 +126,7 @@ class serializer:
             sorted_data (list): A list to store sorted data.
             _running (bool): A flag to indicate whether the serializer is running
                                 or stopped.
-            
+
             _buffer_data (list): A list to store parsed message data received from
                                 the datastream manager.
             _overwrite_headers (bool): A boolean indicating whether to overwrite
@@ -107,7 +172,7 @@ class serializer:
                 unkown_msg_data.append(v)
                 continue
             name = t.fields[i][1]
-            msg_atr.append(name)
+            msg_atr.append(name.replace(" ", ""))
             msg_values.append(getattr(nmea_object, name))
 
         if len(unkown_msg_data) > 1:
@@ -150,7 +215,7 @@ class serializer:
         mmsi = ais_dict["mmsi"]
 
         return (msg_atr, msg_values, mmsi)
-    
+
     def stop(self):
         """
         Stop the serializer.
@@ -187,17 +252,28 @@ class serializer:
 
         """
         msg_id, msg_atr, msg_values = message
+        msg_atr.append("message_id")
+        msg_values.append(msg_id)
 
-        # ToDo: Probably very inefficient
-        
-
-        # ToDo: awful, inefficient, do better check and skip redundancy
-        
-
-        message = dict(zip(msg_atr, msg_values))
-        message["message_id"] = msg_id
-        self.sorted_data.append(message)
-        return
+        if msg_id == "$GPRMC":
+            new_obj = GPRMC(*msg_values)
+            self.sorted_data.append(new_obj)
+            return
+        elif msg_id == "$GPGGA":
+            new_obj = GPGGA(*msg_values)
+            self.sorted_data.append(new_obj)
+            return
+        elif msg_id == "$PSIMSNS":
+            msg_values[1] = datetime.datetime.strptime(
+                msg_values[1], "%H%M%S.%f"
+            ).time()
+            new_obj = PSIMSNS(*msg_values)
+            self.sorted_data.append(new_obj)
+            return
+        elif "!" in msg_id:
+            new_obj = dict(zip(msg_atr, msg_values))
+            self.sorted_data.append(new_obj)
+            return
 
     def _serialize_buffered_message(self):
         """
@@ -212,7 +288,7 @@ class serializer:
             and should not be called directly.
         """
         if len(self._buffer_data) < 1:
-            self.bufferBusy = False 
+            self.bufferBusy = False
             return
 
         self.bufferBusy = True
@@ -220,9 +296,7 @@ class serializer:
         msg_id = self._buffer_data[-1][0]
 
         if msg_id.find("!") == 0:
-            msg_atr, msg_values, mmsi = self._get_ais_attributes(
-                _message
-            )
+            msg_atr, msg_values, mmsi = self._get_ais_attributes(_message)
             msg_id = msg_id + "_" + str(mmsi)
         else:
             msg_atr, msg_values = self._get_nmea_attributes(_message, msg_id)

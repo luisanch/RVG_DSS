@@ -9,6 +9,7 @@ A server class for managing simulation data, transformations, and communication.
 
 import numpy as np
 from scipy.signal import butter, filtfilt
+from dataclasses import asdict
 import json
 from .simulation_transform import simulation_transform
 from ..serializers.serializer import serializer
@@ -372,8 +373,8 @@ class simulation_server:
         represent the direction of latitude and longitude.
 
         """
-        self.gunnerus_lon = self.transform.deg_2_dec(float(msg["lon"]), msg["lon_dir"])
-        self.gunnerus_lat = self.transform.deg_2_dec(float(msg["lat"]), msg["lat_dir"])
+        self.gunnerus_lon = self.transform.deg_2_dec(msg.lon, msg.lon_dir)
+        self.gunnerus_lat = self.transform.deg_2_dec(msg.lat, msg.lat_dir)
 
     def _send(self, message):
         """
@@ -389,36 +390,37 @@ class simulation_server:
         - message (dict): The message dictionary to be sent.
 
         """
-        if message["message_id"] == "$PSIMSNS":
-            self.rvg_heading = message["head_deg"]
-            if self.websocket.enable:
-                json_msg = self._compose_msg(message)
-                self.websocket.send(json_msg)
+        if type(message) != dict:
+            if message.message_id == "$PSIMSNS":
+                self.rvg_heading = message.head_deg
+                if self.websocket.enable:
+                    json_msg = self._compose_msg(asdict(message))
+                    self.websocket.send(json_msg)
 
-        if message["message_id"] == "$GPGGA":
-            if self.websocket.enable:
-                json_msg = self._compose_msg(message)
-                self.websocket.send(json_msg)
+            if message.message_id == "$GPGGA":
+                if self.websocket.enable:
+                    json_msg = self._compose_msg(asdict(message))
+                    self.websocket.send(json_msg)
 
-        if message["message_id"] == "$GPRMC":
-            self._set_gunnerus_coords(message)
-            self._colav_manager.update_gunnerus_data(message)
-            self.rvg_state = message
-            if self.websocket.enable:
-                json_msg = self._compose_msg(message)
-                self.websocket.send(json_msg)
+            if message.message_id == "$GPRMC":
+                self._set_gunnerus_coords(message)
+                self._colav_manager.update_gunnerus_data(message)
+                self.rvg_state = message
+                if self.websocket.enable:
+                    json_msg = self._compose_msg(asdict(message))
+                    self.websocket.send(json_msg)
+        else:
+            if self._validate_coords(message, self.distance_filter):
+                valid_ais_msg = message["message_id"].find("!") == 0 and self._has_data(
+                    message
+                )
 
-        if self._validate_coords(message, self.distance_filter):
-            valid_ais_msg = message["message_id"].find("!") == 0 and self._has_data(
-                message
-            )
+                if valid_ais_msg:
+                    self._colav_manager.update_ais_data(message)
 
-            if valid_ais_msg:
-                self._colav_manager.update_ais_data(message)
-
-            if self.websocket.enable:
-                json_msg = self._compose_ais_msg(message)
-                self.websocket.send(json_msg)
+                if self.websocket.enable:
+                    json_msg = self._compose_ais_msg(message)
+                    self.websocket.send(json_msg)
 
     def pop_buffer(self, index=None):
         """
