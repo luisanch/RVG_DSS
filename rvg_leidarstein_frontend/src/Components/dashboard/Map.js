@@ -113,7 +113,7 @@ const MyMap = (props) => {
     if (data.message_id.indexOf("cbf") === 0) {
       cleanupCoundownCBF = cleanupInterval;
 
-      setCBFObject(data.data.cbf);
+      setCBFObject(data.data.p);
       setCBFDomains(data.data.domains);
       const d = new Date();
       let time = d.getTime();

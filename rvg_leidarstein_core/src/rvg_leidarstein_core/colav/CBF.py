@@ -9,6 +9,7 @@ This module contains the 'cbf' class, which provides control barrier functionali
 import math
 import numpy as np
 import copy
+from ..colav.colav_types import CBF_Data
 from ..simulation.simulation_transform import simulation_transform
 from time import time
 
@@ -17,6 +18,7 @@ class cbf:
     """
     The 'cbf' class provides control barrier functionality for collision avoidance.
     """
+
     def __init__(
         self,
         safety_radius_m,
@@ -26,7 +28,7 @@ class cbf:
         gamma_2=40,
         gamma_1=0.2,
         t_tot=600,
-        rd_max=1, 
+        rd_max=1,
         max_rd=0.18,
         transform=simulation_transform(),
     ):
@@ -41,7 +43,7 @@ class cbf:
             gamma_2 (float, optional): CBF parameter gamma_2. Default is 40.
             gamma_1 (float, optional): CBF parameter gamma_1. Default is 0.2.
             t_tot (float, optional): Total time for CBF calculation. Default is 600 seconds.
-            rd_max (float, optional): Maximum value for nominal control rd. Default is 1. 
+            rd_max (float, optional): Maximum value for nominal control rd. Default is 1.
             max_rd (float, optional): Maximum value for rd. Default is 0.18.
             transform (object, optional): Object for coordinate transformations. Default is simulation_transform().
         """
@@ -57,7 +59,7 @@ class cbf:
         self._gamma_1 = gamma_1
         self._epsilon = 0.000001
         self._t_tot = t_tot
-        self._rd_max = rd_max 
+        self._rd_max = rd_max
         self._hist_len = int(t_tot / dt)
         self._running = False
         self._max_rd = max_rd
@@ -81,30 +83,30 @@ class cbf:
         return
 
     def _sort_data(self):
-        p = self._gunn_data["p"]
-        u = self._gunn_data["u"]
-        z = self._gunn_data["z"]
-        tq = self._gunn_data["tq"]
+        p = self._gunn_data.p
+        u = self._gunn_data.u
+        z = self._gunn_data.z
+        tq = self._gunn_data.tq
         po = np.zeros((2, self._ais_data_len))
         zo = np.zeros((2, self._ais_data_len))
         uo = np.zeros((self._ais_data_len))
 
         for idx, ais_item in enumerate(self._ais_data):
-            po[0, idx] = ais_item["po_x"]
-            po[1, idx] = ais_item["po_y"]
-            uo[idx] = ais_item["uo"]
-            zo[:, idx] = ais_item["zo"].T
+            po[0, idx] = ais_item.po_x
+            po[1, idx] = ais_item.po_y
+            uo[idx] = ais_item.uo
+            zo[:, idx] = ais_item.zo.T
 
         return p, u, z, tq, po, zo, uo
 
     def _get_nominal_control(self, z, tq):
         """
-        Calculate the nominal control 'rd' turning rate based on the given input 
+        Calculate the nominal control 'rd' turning rate based on the given input
         vectors 'z' and 'tq'.
 
         Parameters:
             z (numpy.array): Vector containing the current orientation information.
-            tq (numpy.array): Vector containing the current target orientation 
+            tq (numpy.array): Vector containing the current target orientation
             information.
 
         Returns:
@@ -187,7 +189,7 @@ class cbf:
             start_maneuver_at = start_time + maneuver_start
         else:
             start_maneuver_at = -1
-        cbf_data = {"p": h_p, "maneuver_start": start_maneuver_at}
+        cbf_data = CBF_Data(p=h_p, maneuver_start=start_maneuver_at)
         ret_var.put(cbf_data)
         return cbf_data
 
@@ -201,17 +203,16 @@ class cbf:
         Returns:
             dict: A dictionary containing the converted geographic coordinates.
         """
-        lat_o = self._gunn_data["lat"]
-        lon_o = self._gunn_data["lon"]
+        lat_o = self._gunn_data.lat
+        lon_o = self._gunn_data.lon
         geo = []
-        converted_data = {}
-        for col in range(cbf_data["p"].shape[1]):
-            x = cbf_data["p"][0, col]
-            y = cbf_data["p"][1, col]
+        for col in range(cbf_data.p.shape[1]):
+            x = cbf_data.p[0, col]
+            y = cbf_data.p[1, col]
             lat, lon = self._transform.xyz_to_coords(x, y, lat_o, lon_o)
             geo.append([lon, lat])
-        converted_data["cbf"] = geo
-        converted_data["maneuver_start"] = cbf_data["maneuver_start"]
+
+        converted_data = CBF_Data(p=geo, maneuver_start=cbf_data.maneuver_start)
         return converted_data
 
     def get_cbf_data(self):

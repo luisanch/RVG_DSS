@@ -48,8 +48,7 @@ if __name__ == "__main__":
         while True:
             if time() > colav_manager._timeout and colav_manager._running:
                 start = time()
-                if colav_manager.update():
-                    # remember to add ocnidtion here for diff cbfs
+                if colav_manager.update(): 
                     (
                         p,
                         u,
@@ -61,7 +60,7 @@ if __name__ == "__main__":
                         encounters,
                         vessels_len,
                     ) = colav_manager.sort_cbf_data()
-                    domains = colav_manager.cbf_domains
+                    domains = colav_manager.cbf_domains 
                     # CBF computation is run in a separate process
                     cbf_process = Process(
                         # here too

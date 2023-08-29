@@ -110,7 +110,7 @@ class core:
             tmax=1,
             dt=0.2,
             predicted_interval=60,
-            mode="rt",
+            mode="4dof",
         )
 
         # Create new threads

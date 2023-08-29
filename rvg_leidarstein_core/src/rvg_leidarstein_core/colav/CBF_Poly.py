@@ -12,6 +12,7 @@ import math
 import numpy as np
 from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
 from rvg_leidarstein_core.colav.CBF_4DOF import cbf_4dof
+from ..colav.colav_types import CBF_Data
 
 from time import time
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
@@ -74,10 +75,10 @@ class cbf_poly(cbf_4dof):
         self._len_factor = 2.5
 
     def _sort_data(self):
-        p = self._gunn_data["p"]
-        u = self._gunn_data["u"]
-        z = self._gunn_data["z"]
-        tq = self._gunn_data["tq"]
+        p = self._gunn_data.p
+        u = self._gunn_data.u
+        z = self._gunn_data.z
+        tq = self._gunn_data.tq
         po = np.zeros((2, self._ais_data_len))
         zo = np.zeros((2, self._ais_data_len))
         uo = np.zeros((self._ais_data_len))
@@ -85,12 +86,12 @@ class cbf_poly(cbf_4dof):
         vessels_len = [None] * self._ais_data_len
 
         for idx, ais_item in enumerate(self._ais_data):
-            po[0, idx] = ais_item["po_x"]
-            po[1, idx] = ais_item["po_y"]
-            uo[idx] = ais_item["uo"]
-            zo[:, idx] = ais_item["zo"].T
-            encounters[idx] = ais_item["encounter"]
-            vessels_len[idx] = ais_item["length"]
+            po[0, idx] = ais_item.po_x
+            po[1, idx] = ais_item.po_y
+            uo[idx] = ais_item.uo
+            zo[:, idx] = ais_item.zo.T
+            encounters[idx] = ais_item.encounter
+            vessels_len[idx] = ais_item.length
 
         return p, u, z, tq, po, zo, uo, encounters, vessels_len
 
@@ -104,20 +105,21 @@ class cbf_poly(cbf_4dof):
         Returns:
             dict: A dictionary containing the converted geographic coordinates.
         """
-        lat_o = self._gunn_data["lat"]
-        lon_o = self._gunn_data["lon"]
+        lat_o = self._gunn_data.lat
+        lon_o = self._gunn_data.lon
         geo = []
-        converted_data = {}
-        for col in range(cbf_data["p"].shape[1]):
-            x = cbf_data["p"][0, col]
-            y = cbf_data["p"][1, col]
+
+        for col in range(cbf_data.p.shape[1]):
+            x = cbf_data.p[0, col]
+            y = cbf_data.p[1, col]
             lat, lon = self._transform.xyz_to_coords(x, y, lat_o, lon_o)
             geo.append([lon, lat])
-        converted_data["cbf"] = geo
-        converted_data["maneuver_start"] = cbf_data["maneuver_start"]
-        converted_data["domains"] = []
+        converted_data = CBF_Data(
+            p=geo,
+            maneuver_start=cbf_data.maneuver_start,
+        )
 
-        for line_group in cbf_data["domain_lines"]:
+        for line_group in cbf_data.domain_lines:
             converted_line_group = []
 
             for line in line_group:
@@ -129,7 +131,7 @@ class cbf_poly(cbf_4dof):
                 lat2, lon2 = self._transform.xyz_to_coords(x2, y2, lat_o, lon_o)
                 converted_line_group.append([[lon1, lat1], [lon2, lat2]])
 
-            converted_data["domains"].append(converted_line_group)
+            converted_data.domains.append(converted_line_group)
         return converted_data
 
     def _get_translated_domains(self, po, zo, encounters, domains, vessels_len):
@@ -247,6 +249,7 @@ class cbf_poly(cbf_4dof):
         Returns:
             dict: Dictionary containing processed control barrier function data.
         """
+
         self._running = True
         start_time = time()
         maneuver_start = None
@@ -334,10 +337,10 @@ class cbf_poly(cbf_4dof):
         translated_domains = self._get_translated_domains(
             po, zo, encounters, domains, vessels_len
         )
-        cbf_data = {
-            "p": hist_p,
-            "maneuver_start": start_maneuver_at,
-            "domain_lines": translated_domains,
-        }
+        cbf_data = CBF_Data(
+            p=hist_p,
+            maneuver_start=start_maneuver_at,
+            domain_lines=translated_domains,
+        )
         ret_var.put(cbf_data)
         return cbf_data

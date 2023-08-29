@@ -11,14 +11,12 @@ from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import (
 )
 from rvg_leidarstein_core.simulation.simulation_transform import simulation_transform
 from .ARPA import arpa
-from .CBF import cbf
-from .CBF_4DOF import cbf_4dof
 from .CBF_Poly import cbf_poly
 from .encounter_classifier import encounter_classifier
 import json
 import time
-import copy
 import numpy as np
+from dataclasses import asdict
 
 
 class colav_manager:
@@ -34,7 +32,6 @@ class colav_manager:
         dummy_gunnerus=None,
         dummy_vessel=None,
         print_comp_t=False,
-        cbf_type="poly",
         prediction_t=600,
     ):
         """
@@ -58,10 +55,6 @@ class colav_manager:
             prediction_t (float): Prediction time in seconds for the COLAV system. Default is 600 seconds.
         """
 
-        self.uni_cbf = "uni"
-        self.dof4_cbf = "4dof"
-        self.poly_cbf = "poly"
-        self._cbf_type = cbf_type
         self._cbf_message_id = "cbf"
         self._arpa_message_id = "arpa"
         self._encounters_message_id = "encounters"
@@ -133,28 +126,13 @@ class colav_manager:
             gunnerus_mmsi=self.gunnerus_mmsi,
         )
 
-        if self._cbf_type == self.dof4_cbf:
-            self._cbf = cbf_4dof(
-                safety_radius_m=self._safety_radius_m,
-                transform=self._transform,
-                k2=0.5,
-                k3=0.5,
-                t_tot=self.prediction_t,
-            )
-        elif self._cbf_type == self.poly_cbf:
-            self._cbf = cbf_poly(
-                safety_radius_m=self._safety_radius_m,
-                transform=self._transform,
-                k2=0.5,
-                k3=0.5,
-                t_tot=self.prediction_t,
-            )
-        else:
-            self._cbf = cbf(
-                safety_radius_m=self._safety_radius_m,
-                transform=self._transform,
-                t_tot=self.prediction_t,
-            )
+        self._cbf = cbf_poly(
+            safety_radius_m=self._safety_radius_m,
+            transform=self._transform,
+            k2=0.5,
+            k3=0.5,
+            t_tot=self.prediction_t,
+        )
 
     def update_cbf_domain_data(self):
         if "cbf_domains" in self.websocket.received_data:
@@ -188,12 +166,11 @@ class colav_manager:
 
     def _update_encounter_classifiers(self, rvg_data, ais_data):
         # initialize classifiers
-
         ais_keys = []
         for ais in ais_data:
-            ais_keys.append(ais["mmsi"])
-            if ais["mmsi"] not in self._encounter_classifiers:
-                self._encounter_classifiers[ais["mmsi"]] = encounter_classifier(
+            ais_keys.append(ais.mmsi)
+            if ais.mmsi not in self._encounter_classifiers:
+                self._encounter_classifiers[ais.mmsi] = encounter_classifier(
                     d_enter_up_cpa=self._d_enter_up_cpa,
                     t_enter_up_cpa=self._t_enter_up_cpa,
                     t_enter_low_cpa=self._t_enter_low_cpa,
@@ -202,33 +179,33 @@ class colav_manager:
                     t_exit_up_cpa=self._t_exit_up_cpa,
                 )
 
-            if ais["mmsi"] in self._encounter_classifiers:
-                if ais.get("safety_params") is not None:
-                    self._encounter_classifiers[ais["mmsi"]].get_encounter_type(
-                        rvg_course=np.deg2rad(rvg_data["course"]),
-                        ts_course=np.deg2rad(ais["course"]),
-                        e=ais["safety_params"]["x_at_r"],
-                        e_ts=ais["safety_params"]["t_x_at_r"],
-                        n=ais["safety_params"]["y_at_r"],
-                        n_ts=ais["safety_params"]["t_y_at_r"],
-                        v_rvg=rvg_data["u"],
-                        v_ts=ais["uo"],
+            if ais.mmsi in self._encounter_classifiers:
+                if ais.safety_params:
+                    self._encounter_classifiers[ais.mmsi].get_encounter_type(
+                        rvg_course=np.deg2rad(rvg_data.course),
+                        ts_course=np.deg2rad(ais.course),
+                        e=ais.x_at_r,
+                        e_ts=ais.t_x_at_r,
+                        n=ais.y_at_r,
+                        n_ts=ais.t_y_at_r,
+                        v_rvg=rvg_data.u,
+                        v_ts=ais.uo,
                         d_at_cpa=self._safety_radius_m,
-                        t_2_cpa=ais["safety_params"]["t_2_r"],
+                        t_2_cpa=ais.t_2_r,
                     )
 
                 else:
-                    self._encounter_classifiers[ais["mmsi"]].get_encounter_type(
-                        rvg_course=np.deg2rad(rvg_data["course"]),
-                        ts_course=np.deg2rad(ais["course"]),
-                        e=ais["cpa"]["x_at_cpa"],
-                        e_ts=ais["cpa"]["o_x_at_cpa"],
-                        n=ais["cpa"]["y_at_cpa"],
-                        n_ts=ais["cpa"]["o_y_at_cpa"],
-                        v_rvg=rvg_data["u"],
-                        v_ts=ais["uo"],
-                        d_at_cpa=ais["cpa"]["d_at_cpa"],
-                        t_2_cpa=ais["cpa"]["t_2_cpa"],
+                    self._encounter_classifiers[ais.mmsi].get_encounter_type(
+                        rvg_course=np.deg2rad(rvg_data.course),
+                        ts_course=np.deg2rad(ais.course),
+                        e=ais.x_at_cpa,
+                        e_ts=ais.o_x_at_cpa,
+                        n=ais.y_at_cpa,
+                        n_ts=ais.o_y_at_cpa,
+                        v_rvg=rvg_data.u,
+                        v_ts=ais.uo,
+                        d_at_cpa=ais.d_at_cpa,
+                        t_2_cpa=ais.t_2_cpa,
                     )
 
         # delete unused classifiers
@@ -238,11 +215,11 @@ class colav_manager:
 
     def augment_arpa_data(self, arpa_data):
         for arpa_entry in arpa_data:
-            if arpa_entry["mmsi"] in self._encounter_classifiers:
-                id = arpa_entry["mmsi"]
-                arpa_entry["encounter"] = self._encounter_classifiers[id].encounter.id
-                arpa_entry["length"] = 50 #entry points for width and bredth
-                arpa_entry["width"] = 50 #entry points for width and bredth
+            if arpa_entry.mmsi in self._encounter_classifiers:
+                id = arpa_entry.mmsi
+                arpa_entry.encounter = self._encounter_classifiers[id].encounter.id
+                arpa_entry.length = 50  # entry points for width and bredth
+                arpa_entry.width = 50  # entry points for width and bredth
         return arpa_data
 
     def sort_cbf_data(self):
@@ -279,9 +256,6 @@ class colav_manager:
         Returns:
             None
         """
-        if self.dummy_vessel is not None:
-            message_id = "dummy"
-            self._ais_data[message_id] = self.dummy_vessel
 
         message_id = data["message_id"]
         self._ais_data[message_id] = data
@@ -368,7 +342,9 @@ class colav_manager:
             None
         """
         converted_cbf_data = self._cbf.convert_data(cbf_data)
-        compose_cbf = self._compose_colav_msg(converted_cbf_data, self._cbf_message_id)
+        compose_cbf = self._compose_colav_msg(
+            asdict(converted_cbf_data), self._cbf_message_id
+        )
         self.websocket.send(compose_cbf)
 
     def start(self):

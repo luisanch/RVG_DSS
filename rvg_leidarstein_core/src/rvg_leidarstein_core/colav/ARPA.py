@@ -12,6 +12,7 @@ import math
 import numpy as np
 import copy
 from ..simulation.simulation_transform import simulation_transform
+from .colav_types import AIS_NED, ARPA_Data, RVG_NED, CPA, Safety_Params
 
 
 class arpa:
@@ -130,8 +131,8 @@ class arpa:
                 northings=lat,
                 eastings=lon,
                 altitude=0,
-                y_o=float(gunnerus_data["lat"]),
-                x_o=float(gunnerus_data["lon"]),
+                y_o=gunnerus_data.lat,
+                x_o=gunnerus_data.lon,
                 z_o=0,
             )
 
@@ -143,16 +144,16 @@ class arpa:
             uo_x = zo[0][0] * uo
             uo_y = zo[1][0] * uo
 
-            ais_data = {
-                "po_x": po_x,
-                "po_y": po_y,
-                "uo": uo,
-                "zo": zo,
-                "uo_x": uo_x,
-                "uo_y": uo_y,
-                "course": course,
-                "mmsi": ais_message["mmsi"],
-            }
+            ais_data = AIS_NED(
+                po_x=po_x,
+                po_y=po_y,
+                uo=uo,
+                zo=zo,
+                uo_x=uo_x,
+                uo_y=uo_y,
+                course=course,
+                mmsi=ais_message["mmsi"],
+            )
 
             return ais_data
         return None
@@ -197,17 +198,17 @@ class arpa:
         u = self._transform.kn_to_mps(gunn_speed)
         ux = u * z[0][0]
         uy = u * z[1][0]
-        gunn_data = {
-            "p": p,
-            "u": u,
-            "ux": ux,
-            "uy": uy,
-            "z": z,
-            "tq": tq,
-            "lon": gunn_lon,
-            "lat": gunn_lat,
-            "course": gunn_course,
-        }
+        gunn_data = RVG_NED(
+            p=p,
+            u=u,
+            ux=ux,
+            uy=uy,
+            z=z,
+            tq=tq,
+            lon=gunn_lon,
+            lat=gunn_lat,
+            course=gunn_course,
+        )
         return gunn_data
 
     def _get_cpa(self, gunn_data, ais_data_item):
@@ -223,14 +224,14 @@ class arpa:
             dict or None: Dictionary containing CPA data if CPA is valid, None
             otherwise.
         """
-        ux = float(gunn_data["ux"])
-        uy = float(gunn_data["uy"])
-        p = gunn_data["p"]
+        ux = gunn_data.ux
+        uy = gunn_data.uy
+        p = gunn_data.p
 
-        po_x = float(ais_data_item["po_x"])
-        po_y = float(ais_data_item["po_y"])
-        uo_x = float(ais_data_item["uo_x"])
-        uo_y = float(ais_data_item["uo_y"])
+        po_x = ais_data_item.po_x
+        po_y = ais_data_item.po_y
+        uo_x = ais_data_item.uo_x
+        uo_y = ais_data_item.uo_y
 
         urx = uo_x - ux
         ury = uo_y - uy
@@ -253,15 +254,15 @@ class arpa:
         o_x_at_cpa = po_x + t_2_cpa * uo_x
         o_y_at_cpa = po_y + t_2_cpa * uo_y
 
-        cpa = {
-            "d_at_cpa": d_at_cpa,
-            "d_2_cpa": d_2_cpa,
-            "t_2_cpa": t_2_cpa,
-            "x_at_cpa": x_at_cpa,
-            "y_at_cpa": y_at_cpa,
-            "o_x_at_cpa": o_x_at_cpa,
-            "o_y_at_cpa": o_y_at_cpa,
-        }
+        cpa = CPA(
+            d_at_cpa=d_at_cpa,
+            d_2_cpa=d_2_cpa,
+            t_2_cpa=t_2_cpa,
+            x_at_cpa=x_at_cpa,
+            y_at_cpa=y_at_cpa,
+            o_x_at_cpa=o_x_at_cpa,
+            o_y_at_cpa=o_y_at_cpa,
+        )
 
         return cpa
 
@@ -278,14 +279,14 @@ class arpa:
             dict or None: Dictionary containing safety parameters if vessel is
             within safety radius, None otherwise.
         """
-        ux = float(gunn_data["ux"])
-        uy = float(gunn_data["uy"])
-        p = gunn_data["p"]
+        ux = gunn_data.ux
+        uy = gunn_data.uy
+        p = gunn_data.p
 
-        po_x = float(ais_data_item["po_x"])
-        po_y = float(ais_data_item["po_y"])
-        uo_x = float(ais_data_item["uo_x"])
-        uo_y = float(ais_data_item["uo_y"])
+        po_x = ais_data_item.po_x
+        po_y = ais_data_item.po_y
+        uo_x = ais_data_item.uo_x
+        uo_y = ais_data_item.uo_y
 
         urx = uo_x - ux
         ury = uo_y - uy
@@ -358,14 +359,14 @@ class arpa:
 
         d_2_r = math.sqrt((t_2_r * ux) ** 2 + (t_2_r * uy) ** 2)
 
-        safety_params = {
-            "t_2_r": t_2_r,
-            "t_x_at_r": t_x_at_r,
-            "t_y_at_r": t_y_at_r,
-            "x_at_r": x_at_r,
-            "y_at_r": y_at_r,
-            "d_2_r": d_2_r,
-        }
+        safety_params = Safety_Params(
+            t_2_r=t_2_r,
+            t_x_at_r=t_x_at_r,
+            t_y_at_r=t_y_at_r,
+            x_at_r=x_at_r,
+            y_at_r=y_at_r,
+            d_2_r=d_2_r,
+        )
 
         return safety_params
 
@@ -398,20 +399,31 @@ class arpa:
             if ais_data_item is None:
                 continue
 
-            cpa = self._get_cpa(gunn_data, ais_data_item)
-            cpa_is_valid = cpa is not None and cpa["t_2_cpa"] >= 0
+            _cpa = self._get_cpa(gunn_data, ais_data_item)
+            cpa_is_valid = _cpa is not None and _cpa.t_2_cpa >= 0
             is_within_tolerance_distance = cpa_is_valid and (
-                cpa["d_at_cpa"] <= (self._safety_radius_m * self._safety_radius_tol)
+                _cpa.d_at_cpa <= (self._safety_radius_m * self._safety_radius_tol)
             )
 
             if is_within_tolerance_distance:
-                ais_data_item["cpa"] = cpa
-                if cpa["d_at_cpa"] < (self._safety_radius_m):
-                    ais_data_item["safety_params"] = self._get_safety_params(
-                        gunn_data, ais_data_item
-                    )
-                else:
-                    ais_data_item["safety_params"] = None
+                ais_data_item.cpa = True
+                ais_data_item.d_at_cpa = _cpa.d_at_cpa
+                ais_data_item.d_2_cpa = _cpa.d_2_cpa
+                ais_data_item.t_2_cpa = _cpa.t_2_cpa
+                ais_data_item.x_at_cpa = _cpa.x_at_cpa
+                ais_data_item.y_at_cpa = _cpa.y_at_cpa
+                ais_data_item.o_x_at_cpa = _cpa.o_x_at_cpa
+                ais_data_item.o_y_at_cpa = _cpa.o_y_at_cpa
+
+                if _cpa.d_at_cpa < (self._safety_radius_m):
+                    safety_params = self._get_safety_params(gunn_data, ais_data_item)
+                    ais_data_item.safety_params = True
+                    ais_data_item.t_2_r = safety_params.t_2_r
+                    ais_data_item.t_x_at_r = safety_params.t_x_at_r
+                    ais_data_item.t_y_at_r = safety_params.t_y_at_r
+                    ais_data_item.x_at_r = safety_params.x_at_r
+                    ais_data_item.y_at_r = safety_params.y_at_r
+                    ais_data_item.d_2_r = safety_params.d_2_r
                 processed_data.append(ais_data_item)
 
         return gunn_data, processed_data
@@ -428,65 +440,64 @@ class arpa:
         Returns:
             dict: Dictionary containing converted ARPA parameters.
         """
-        lon = gunn_data["lon"]
-        lat = gunn_data["lat"]
-        course = gunn_data["course"]
+        lon = gunn_data.lon
+        lat = gunn_data.lat
+        course = gunn_data.course
         converted_data = {}
 
         for arpa_msg in arpa_data:
-            arpa_out = {}
-            po_x = arpa_msg["po_x"]
-            po_y = arpa_msg["po_y"]
+            arpa_out = ARPA_Data()
+            po_x = arpa_msg.po_x
+            po_y = arpa_msg.po_y
             lat_o, lon_o = self._transform.xyz_to_coords(po_x, po_y, lat, lon)
-            x_at_cpa = arpa_msg["cpa"]["x_at_cpa"]
-            y_at_cpa = arpa_msg["cpa"]["y_at_cpa"]
+            x_at_cpa = arpa_msg.x_at_cpa
+            y_at_cpa = arpa_msg.y_at_cpa
             lat_at_cpa, lon_at_cpa = self._transform.xyz_to_coords(
                 x_at_cpa, y_at_cpa, lat, lon
             )
-            o_x_at_cpa = arpa_msg["cpa"]["o_x_at_cpa"]
-            o_y_at_cpa = arpa_msg["cpa"]["o_y_at_cpa"]
+            o_x_at_cpa = arpa_msg.o_x_at_cpa
+            o_y_at_cpa = arpa_msg.o_y_at_cpa
             lat_o_at_cpa, lon_o_at_cpa = self._transform.xyz_to_coords(
                 o_x_at_cpa, o_y_at_cpa, lat, lon
             )
-            arpa_out["self_course"] = course
-            arpa_out["course"] = arpa_msg["course"]
-            arpa_out["t_2_cpa"] = arpa_msg["cpa"]["t_2_cpa"]
-            arpa_out["lat_o"] = lat_o
-            arpa_out["lon_o"] = lon_o
-            arpa_out["uo"] = arpa_msg["uo"]
-            arpa_out["zo"] = arpa_msg["zo"]
-            arpa_out["d_at_cpa"] = arpa_msg["cpa"]["d_at_cpa"]
-            arpa_out["d_2_cpa"] = arpa_msg["cpa"]["d_2_cpa"]
-            arpa_out["lat_at_cpa"] = lat_at_cpa
-            arpa_out["lon_at_cpa"] = lon_at_cpa
-            arpa_out["lat_o_at_cpa"] = lat_o_at_cpa
-            arpa_out["lon_o_at_cpa"] = lon_o_at_cpa
+            arpa_out.self_course = course
+            arpa_out.course = arpa_msg.course
+            arpa_out.t_2_cpa = arpa_msg.t_2_cpa
+            arpa_out.lat_o = lat_o
+            arpa_out.lon_o = lon_o
+            arpa_out.uo = arpa_msg.uo
+            arpa_out.zo = arpa_msg.zo
+            arpa_out.d_at_cpa = arpa_msg.d_at_cpa
+            arpa_out.d_2_cpa = arpa_msg.d_2_cpa
+            arpa_out.lat_at_cpa = lat_at_cpa
+            arpa_out.lon_at_cpa = lon_at_cpa
+            arpa_out.lat_o_at_cpa = lat_o_at_cpa
+            arpa_out.lon_o_at_cpa = lon_o_at_cpa
 
-            if arpa_msg["safety_params"] is not None:
-                safety_params = True
-                t_x_at_r = arpa_msg["safety_params"]["t_x_at_r"]
-                t_y_at_r = arpa_msg["safety_params"]["t_y_at_r"]
+            if arpa_msg.safety_params:
+                t_x_at_r = arpa_msg.t_x_at_r
+                t_y_at_r = arpa_msg.t_y_at_r
                 lat_o_at_r, lon_o_at_r = self._transform.xyz_to_coords(
                     t_x_at_r, t_y_at_r, lat, lon
                 )
-                x_at_r = arpa_msg["safety_params"]["x_at_r"]
-                y_at_r = arpa_msg["safety_params"]["y_at_r"]
+                x_at_r = arpa_msg.x_at_r
+                y_at_r = arpa_msg.y_at_r
                 lat_at_r, lon_at_r = self._transform.xyz_to_coords(
                     x_at_r, y_at_r, lat, lon
                 )
-                arpa_out["safety_params"] = safety_params
-                arpa_out["t_2_r"] = arpa_msg["safety_params"]["t_2_r"]
-                arpa_out["lat_o_at_r"] = lat_o_at_r
-                arpa_out["lon_o_at_r"] = lon_o_at_r
-                arpa_out["lat_at_r"] = lat_at_r
-                arpa_out["lon_at_r"] = lon_at_r
-                arpa_out["d_2_r"] = arpa_msg["safety_params"]["d_2_r"]
-                arpa_out["safety_radius"] = self._safety_radius_m
+                arpa_out.safety_params = arpa_msg.safety_params
+                arpa_out.t_2_r = arpa_msg.t_2_r
+                arpa_out.lat_o_at_r = lat_o_at_r
+                arpa_out.lon_o_at_r = lon_o_at_r
+                arpa_out.lat_at_r = lat_at_r
+                arpa_out.lon_at_r = lon_at_r
+                arpa_out.d_2_r = arpa_msg.d_2_r
+                arpa_out.safety_radius = self._safety_radius_m
             else:
                 safety_params = False
-                arpa_out["safety_params"] = False
+                arpa_out.safety_params = False
 
-            converted_data[arpa_msg["mmsi"]] = arpa_out
+            converted_data[arpa_msg.mmsi] = arpa_out
         return converted_data
 
     def get_ARPA_parameters(self):
