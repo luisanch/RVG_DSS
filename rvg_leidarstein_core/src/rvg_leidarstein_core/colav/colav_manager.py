@@ -28,9 +28,7 @@ class colav_manager:
         safety_radius_tol=1.5,
         max_d_2_cpa=2000,
         gunnerus_mmsi="",
-        websocket=rvg_leidarstein_websocket,
-        dummy_gunnerus=None,
-        dummy_vessel=None,
+        websocket=rvg_leidarstein_websocket, 
         print_comp_t=False,
         prediction_t=600,
     ):
@@ -72,9 +70,7 @@ class colav_manager:
         self._safety_radius_tol = safety_radius_tol
         self._safety_radius_nm = self._transform.m_to_nm(safety_radius_m)
         self._safety_radius_deg = self._transform.nm_to_deg(self._safety_radius_nm)
-        self._max_d_2_cpa = max_d_2_cpa
-        self.dummy_gunnerus = dummy_gunnerus
-        self.dummy_vessel = dummy_vessel
+        self._max_d_2_cpa = max_d_2_cpa  
         self.print_c_time = print_comp_t
         self.prediction_t = prediction_t
         self._encounter_classifiers = {}
@@ -241,10 +237,7 @@ class colav_manager:
         Returns:
             None
         """
-        if self.dummy_gunnerus is not None:
-            self._gunnerus_data = self.dummy_gunnerus
-        else:
-            self._gunnerus_data = data
+        self._gunnerus_data = data
 
     def update_ais_data(self, data):
         """
@@ -257,7 +250,7 @@ class colav_manager:
             None
         """
 
-        message_id = data["message_id"]
+        message_id = data.message_id
         self._ais_data[message_id] = data
 
     def _reset_timeout(self):
@@ -305,12 +298,6 @@ class colav_manager:
             bool: True if data is available for ARPA and CBF computation, False otherwise.
         """
         self.update_cbf_domain_data()
-        if self.dummy_vessel is not None:
-            self.websocket.send(
-                json.dumps(
-                    {"type": "datain", "content": self.dummy_vessel}, default=str
-                )
-            )
         self._arpa.update_gunnerus_data(self._gunnerus_data)
         self._arpa.update_ais_data(self._ais_data)
         arpa_gunn_data, arpa_data = self._arpa.get_ARPA_parameters()

@@ -11,73 +11,10 @@ The FastSerializer class inherits attributes and methods from the Serializer cla
 overrides some of them to improve serialization performance.
 """
 
-from dataclasses import dataclass
-from pydantic import validate_arguments
 
 import datetime
-import decimal
 from ..datastream_managers.mqtt_datastream_manager import mqtt_datastream_manager
-
-
-@validate_arguments
-@dataclass
-class GPRMC:
-    """Class for keeping track of an item in inventory."""
-
-    timestamp: datetime.time
-    status: str
-    lat: float
-    lat_dir: str
-    lon: float
-    lon_dir: str
-    spd_over_grnd: float
-    true_course: float
-    datestamp: datetime.date
-    mag_variation: str
-    mag_var_dir: str
-    mode_indicator: str
-    nav_status: str
-    message_id: str
-
-
-@validate_arguments
-@dataclass
-class GPGGA:
-    timestamp: datetime.time
-    lat: float
-    lat_dir: str
-    lon: float
-    lon_dir: str
-    gps_qual: int
-    num_sats: str
-    horizontal_dil: str
-    altitude: float
-    altitude_units: str
-    geo_sep: str
-    geo_sep_units: str
-    age_gps_data: str
-    ref_station_id: str
-    message_id: str
-
-
-@validate_arguments
-@dataclass
-class PSIMSNS:
-    msg_type: str
-    timestamp: datetime.time
-    unknown_1: str
-    tcvr_num: str
-    tdcr_num: str
-    roll_deg: float
-    pitch_deg: float
-    heave_m: float
-    head_deg: float
-    empty_1: str
-    unknown_2: str
-    unknown_3: str
-    empty_2: str
-    checksum: str
-    message_id: str
+from .serializer_types import AIS, GPGGA, GPRMC, PSIMSNS
 
 
 class serializer:
@@ -138,7 +75,7 @@ class serializer:
         # define name for unknown atribute
         self.def_unk_atr_name = "unknown_"
         self.bufferBusy = False
-        self._datstream_manager = datastream_manager
+        self._datastream_manager = datastream_manager
         self.sorted_data = []
         self._running = False
         self._buffer_data = datastream_manager.parsed_msg_list
@@ -190,32 +127,6 @@ class serializer:
 
         return (msg_atr, msg_values)
 
-    def _get_ais_attributes(self, ais_object):
-        """
-        Get attributes and values from a parsed AIS message object.
-
-        This method takes a parsed AIS message object and extracts its attributes
-        and values. The attributes and values are stored in the 'msg_atr' and
-        'msg_values' lists, respectively. Additionally, the MMSI (Maritime Mobile
-        Service Identity) attribute is extracted separately from the AIS message
-        object and included in the 'msg_atr' and 'msg_values' lists.
-
-        Args:
-            ais_object (dict): The parsed AIS message object obtained from the
-            'ais_decode' function.
-
-        Returns:
-            tuple: A tuple containing four lists: 'msg_atr' (attribute names),
-            'msg_values' (attribute values), an empty list (as there are no unknown
-            attributes for AIS messages), and 'mmsi' (MMSI attribute value).
-        """
-        ais_dict = ais_object.asdict()
-        msg_values = list(ais_dict.values())
-        msg_atr = list(ais_dict.keys())
-        mmsi = ais_dict["mmsi"]
-
-        return (msg_atr, msg_values, mmsi)
-
     def stop(self):
         """
         Stop the serializer.
@@ -229,7 +140,27 @@ class serializer:
         self._running = False
         print("Serializer stopped.")
 
-    def _serialize_data(self, message):
+    def _serialize_ais_data(self, id, ais_message):
+        valid_message = (
+            hasattr(ais_message, "lat")
+            and hasattr(ais_message, "lon")
+            and hasattr(ais_message, "mmsi")
+        )
+
+        if valid_message:
+            msg_id = str(id) + str(ais_message.mmsi)
+            new_obj = AIS(ais_message.lat, ais_message.lon, ais_message.mmsi, msg_id)
+            if hasattr(ais_message, "course"):
+                new_obj.course = ais_message.course
+            if hasattr(ais_message, "heading"):
+                new_obj.course = ais_message.heading
+            if hasattr(ais_message, "speed"):
+                new_obj.course = ais_message.speed
+            return new_obj
+        else:
+            return None
+
+    def _serialize_nmea_data(self, message):
         """
         Serialize a single datastream message.
 
@@ -257,23 +188,18 @@ class serializer:
 
         if msg_id == "$GPRMC":
             new_obj = GPRMC(*msg_values)
-            self.sorted_data.append(new_obj)
-            return
+            return new_obj
         elif msg_id == "$GPGGA":
             new_obj = GPGGA(*msg_values)
-            self.sorted_data.append(new_obj)
-            return
+            return new_obj
         elif msg_id == "$PSIMSNS":
             msg_values[1] = datetime.datetime.strptime(
                 msg_values[1], "%H%M%S.%f"
             ).time()
             new_obj = PSIMSNS(*msg_values)
-            self.sorted_data.append(new_obj)
-            return
-        elif "!" in msg_id:
-            new_obj = dict(zip(msg_atr, msg_values))
-            self.sorted_data.append(new_obj)
-            return
+            return new_obj
+        else:
+            return None
 
     def _serialize_buffered_message(self):
         """
@@ -296,14 +222,15 @@ class serializer:
         msg_id = self._buffer_data[-1][0]
 
         if msg_id.find("!") == 0:
-            msg_atr, msg_values, mmsi = self._get_ais_attributes(_message)
-            msg_id = msg_id + "_" + str(mmsi)
+            new_obj = self._serialize_ais_data(msg_id, _message)
         else:
             msg_atr, msg_values = self._get_nmea_attributes(_message, msg_id)
+            message = (msg_id, msg_atr, msg_values)
+            new_obj = self._serialize_nmea_data(message)
 
-        message = (msg_id, msg_atr, msg_values)
-        self._serialize_data(message)
-        self._datstream_manager.pop_parsed_msg_list()
+        if new_obj is not None: 
+            self.sorted_data.append(new_obj)
+        self._datastream_manager.pop_parsed_msg_list()
 
     def start(self):
         """

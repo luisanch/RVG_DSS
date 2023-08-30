@@ -18,7 +18,7 @@ from dataclasses import asdict
 from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
 from ..data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
 from ..colav.colav_manager import colav_manager
-from ..serializers.serializer import serializer, GPGGA, GPRMC, PSIMSNS
+from ..serializers.serializer import serializer, GPGGA, GPRMC, PSIMSNS, AIS
 
 from .simulation_server import simulation_server
 
@@ -403,7 +403,7 @@ class simulation_4dof(simulation_server):
         while self._running:
             self.check_incoming_controls()
             if len(self._buffer):  # check if rt data should be sent
-                if type(self._buffer[0]) == dict:  # send ais messages
+                if self._buffer[0].message_id.find("!") == 0:  # send ais messages
                     self._send(self._buffer[0])
                 self.pop_buffer(0)
 
@@ -413,6 +413,9 @@ class simulation_4dof(simulation_server):
                 self.sim_buffer = self.convert_simulation(out, timestamps)
 
             # send 4dof sim data for rvg
-            if len(self.sim_buffer) and datetime.now().time() > self.sim_buffer[0].timestamp:
+            if (
+                len(self.sim_buffer)
+                and datetime.now().time() > self.sim_buffer[0].timestamp
+            ):
                 self._send(self.sim_buffer[0])
                 self.sim_buffer.pop(0)

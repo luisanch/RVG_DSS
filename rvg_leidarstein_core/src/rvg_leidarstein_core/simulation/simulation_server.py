@@ -13,6 +13,7 @@ from dataclasses import asdict
 import json
 from .simulation_transform import simulation_transform
 from ..serializers.serializer import serializer
+from ..serializers.serializer_types import AIS, PSIMSNS, GPGGA, GPRMC
 from ..data_relay.rvg_leidarstein_websocket import rvg_leidarstein_websocket
 from ..colav.colav_manager import colav_manager
 import math
@@ -91,52 +92,6 @@ class simulation_server:
         """
         self.ais_history.clear()
 
-    def _has_data(self, msg):
-        """
-        Check if a message has latitude and longitude data.
-
-        Parameters:
-        - msg (dict): The message to check.
-
-        Returns:
-        - bool: True if the message has latitude and longitude data, False otherwise.
-
-        """
-        msg_keys = msg.keys()
-        has_data = "lat" in msg_keys and "lon" in msg_keys
-        return has_data
-
-    def _has_prop(self, msg, prop=""):
-        """
-        Check if a message has a specific property.
-
-        Parameters:
-        - msg (dict): The message to check.
-        - prop (str): The property to check for.
-
-        Returns:
-        - bool: True if the message has the specified property, False otherwise.
-
-        """
-        msg_keys = msg.keys()
-        has_data = prop in msg_keys
-        return has_data
-
-    def _is_moving(self, msg):
-        """
-        Check if a message represents a moving object.
-
-        Parameters:
-        - msg (dict): The message to check.
-
-        Returns:
-        - bool: True if the message contains course and speed data, False otherwise.
-
-        """
-        msg_keys = msg.keys()
-        has_data = "course" in msg_keys and "speed" in msg_keys
-        return has_data
-
     def stop(self):
         """
         Stop the simulation server.
@@ -177,17 +132,13 @@ class simulation_server:
         if self.gunnerus_lat is None or self.gunnerus_lon is None:
             return False
 
-        if msg["message_id"].find("!AI") == 0:
-            if self._has_data(msg):
-                lat = float(msg["lat"])
-                lon = float(msg["lon"])
+        lat = msg.lat
+        lon = msg.lon
 
-                p = [lat, lon]
-                q = [self.gunnerus_lat, self.gunnerus_lon]
+        p = [lat, lon]
+        q = [self.gunnerus_lat, self.gunnerus_lon]
 
-                return self.dist(p, q) < distance
-
-        return False
+        return self.dist(p, q) < distance
 
     def _set_predicted_position(self, msg):
         """
@@ -202,16 +153,15 @@ class simulation_server:
         - msg (dict): The message representing the moving object.
 
         """
-        if self._is_moving(msg) and msg["speed"] > 0:
-            speed = self.transform.kn_to_mps(msg["speed"])
-            x = math.sin(math.radians(msg["course"])) * speed * self._predicted_interval
-            y = math.cos(math.radians(msg["course"])) * speed * self._predicted_interval
+        is_moving = (msg.course is not None) and (msg.speed is not None)
+        if is_moving and msg.speed > 0:
+            speed = self.transform.kn_to_mps(msg.speed)
+            x = math.sin(math.radians(msg.course)) * speed * self._predicted_interval
+            y = math.cos(math.radians(msg.course)) * speed * self._predicted_interval
 
-            lat_p, lon_p = self.transform.xyz_to_coords(
-                x, y, float(msg["lat"]), float(msg["lon"])
-            )
-            msg["lat_p"] = lat_p
-            msg["lon_p"] = lon_p
+            lat_p, lon_p = self.transform.xyz_to_coords(x, y, msg.lat, msg.lon)
+            msg.lat_p = lat_p
+            msg.lon_p = lon_p
 
     def _lp_filter_data(self, data=[]):
         """
@@ -247,79 +197,65 @@ class simulation_server:
         "lon" (longitude) properties.
 
         """
-        if msg["message_id"].find("!AI") == 0:
-            if self._has_data(msg):
-                message_id = msg["message_id"]
-                lat = float(msg["lat"])
-                lon = float(msg["lon"])
-                has_course = self._has_prop(msg, "course")
 
-                if has_course:
-                    course = float(msg["course"])
+        message_id = msg.message_id
+        lat = msg.lat
+        lon = msg.lon
+        has_course = msg.course is not None
 
-                if message_id in self.ais_history.keys():
-                    self.ais_history[message_id]["lon_history"].append(lon)
-                    filt_lon = self._lp_filter_data(
-                        self.ais_history[message_id]["lon_history"]
-                    )
-                    self.ais_history[message_id]["lat_history"].append(lat)
-                    filt_lat = self._lp_filter_data(
-                        self.ais_history[message_id]["lat_history"]
-                    )
+        if has_course:
+            course = msg.course
 
-                    if filt_lon is not None and filt_lat is not None:
-                        filtered_pos = np.array([filt_lon, filt_lat]).T.tolist()
-                        self.ais_history[message_id]["pos_history"] = filtered_pos
-                    else:
-                        unfiltered_pos = np.array(
-                            [
-                                self.ais_history[message_id]["lon_history"],
-                                self.ais_history[message_id]["lat_history"],
-                            ]
-                        ).T.tolist()
-                        self.ais_history[message_id]["pos_history"] = unfiltered_pos
+        if message_id in self.ais_history.keys():
+            self.ais_history[message_id].lon_history.append(lon)
+            filt_lon = self._lp_filter_data(self.ais_history[message_id].lon_history)
+            self.ais_history[message_id].lat_history.append(lat)
+            filt_lat = self._lp_filter_data(self.ais_history[message_id].lat_history)
 
-                    if has_course:
-                        self.ais_history[message_id]["course_history"].append(course)
-                        filtered_course = self._lp_filter_data(
-                            self.ais_history[message_id]["course_history"]
-                        )
-                        if filtered_course is not None:
-                            self.ais_history[message_id][
-                                "filtered_course"
-                            ] = filtered_course[-1]
-                        else:
-                            self.ais_history[message_id]["filtered_course"] = course
+            if filt_lon is not None and filt_lat is not None:
+                filtered_pos = np.array([filt_lon, filt_lat]).T.tolist()
+                self.ais_history[message_id].pos_history = filtered_pos
+            else:
+                unfiltered_pos = np.array(
+                    [
+                        self.ais_history[message_id].lon_history,
+                        self.ais_history[message_id].lat_history,
+                    ]
+                ).T.tolist()
+                self.ais_history[message_id].pos_history = unfiltered_pos
 
-                    if (
-                        len(self.ais_history[message_id]["lon_history"])
-                        > self.ais_history_len
-                    ):
-                        self.ais_history[message_id]["lon_history"].pop(0)
-                    if (
-                        len(self.ais_history[message_id]["lat_history"])
-                        > self.ais_history_len
-                    ):
-                        self.ais_history[message_id]["lat_history"].pop(0)
-
-                    if has_course and (
-                        len(self.ais_history[message_id]["course_history"])
-                        > self.ais_history_len
-                    ):
-                        self.ais_history[message_id]["course_history"].pop(0)
+            if has_course:
+                self.ais_history[message_id].course_history.append(course)
+                filtered_course = self._lp_filter_data(
+                    self.ais_history[message_id].course_history
+                )
+                if filtered_course is not None:
+                    self.ais_history[message_id].filtered_course = filtered_course[-1]
                 else:
-                    self.ais_history[message_id] = dict()
-                    self.ais_history[message_id]["lon_history"] = [lon]
-                    self.ais_history[message_id]["lat_history"] = [lat]
-                    self.ais_history[message_id]["pos_history"] = []
+                    self.ais_history[message_id].filtered_course = course
 
-                    if has_course:
-                        self.ais_history[message_id]["course_history"] = [course]
-                        self.ais_history[message_id]["filtered_course"] = course
+            if len(self.ais_history[message_id].lon_history) > self.ais_history_len:
+                self.ais_history[message_id].lon_history.pop(0)
+            if len(self.ais_history[message_id].lat_history) > self.ais_history_len:
+                self.ais_history[message_id].lat_history.pop(0)
 
-                msg["pos_history"] = self.ais_history[message_id]["pos_history"]
-                if has_course:
-                    msg["course"] = self.ais_history[message_id]["filtered_course"]
+            if has_course and (
+                len(self.ais_history[message_id].course_history) > self.ais_history_len
+            ):
+                self.ais_history[message_id].course_history.pop(0)
+        else:  # add new item to history
+            self.ais_history[message_id] = AIS(lat, lon, msg.mmsi, message_id)
+            self.ais_history[message_id].lon_history = [lon]
+            self.ais_history[message_id].lat_history = [lat]
+            self.ais_history[message_id].pos_history = []
+
+            if has_course:
+                self.ais_history[message_id].course_history = [course]
+                self.ais_history[message_id].filtered_course = course
+
+        msg.pos_history = self.ais_history[message_id].pos_history
+        if has_course:
+            msg.course = self.ais_history[message_id].filtered_course
 
     def _compose_msg(self, msg, msg_type="datain"):
         """
@@ -357,7 +293,7 @@ class simulation_server:
         """
         self._set_history(msg)
         self._set_predicted_position(msg)
-        return json.dumps({"type": msg_type, "content": msg}, default=str)
+        return json.dumps({"type": msg_type, "content": asdict(msg)}, default=str)
 
     def _set_gunnerus_coords(self, msg):
         """
@@ -390,33 +326,28 @@ class simulation_server:
         - message (dict): The message dictionary to be sent.
 
         """
-        if type(message) != dict:
-            if message.message_id == "$PSIMSNS":
-                self.rvg_heading = message.head_deg
-                if self.websocket.enable:
-                    json_msg = self._compose_msg(asdict(message))
-                    self.websocket.send(json_msg)
 
-            if message.message_id == "$GPGGA":
-                if self.websocket.enable:
-                    json_msg = self._compose_msg(asdict(message))
-                    self.websocket.send(json_msg)
+        if message.message_id == "$PSIMSNS":
+            self.rvg_heading = message.head_deg
+            if self.websocket.enable:
+                json_msg = self._compose_msg(asdict(message))
+                self.websocket.send(json_msg)
 
-            if message.message_id == "$GPRMC":
-                self._set_gunnerus_coords(message)
-                self._colav_manager.update_gunnerus_data(message)
-                self.rvg_state = message
-                if self.websocket.enable:
-                    json_msg = self._compose_msg(asdict(message))
-                    self.websocket.send(json_msg)
-        else:
+        elif message.message_id == "$GPGGA":
+            if self.websocket.enable:
+                json_msg = self._compose_msg(asdict(message))
+                self.websocket.send(json_msg)
+
+        elif message.message_id == "$GPRMC":
+            self._set_gunnerus_coords(message)
+            self._colav_manager.update_gunnerus_data(message)
+            self.rvg_state = message
+            if self.websocket.enable:
+                json_msg = self._compose_msg(asdict(message))
+                self.websocket.send(json_msg)
+        elif message.message_id.find("!") == 0:
             if self._validate_coords(message, self.distance_filter):
-                valid_ais_msg = message["message_id"].find("!") == 0 and self._has_data(
-                    message
-                )
-
-                if valid_ais_msg:
-                    self._colav_manager.update_ais_data(message)
+                self._colav_manager.update_ais_data(message)
 
                 if self.websocket.enable:
                     json_msg = self._compose_ais_msg(message)

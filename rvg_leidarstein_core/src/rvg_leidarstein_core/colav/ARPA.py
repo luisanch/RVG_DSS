@@ -73,34 +73,6 @@ class arpa:
         """
         self._ais_data = data
 
-    def _has_coords(self, message):
-        """
-        Check if the message contains latitude and longitude coordinates.
-
-        Parameters:
-            message (dict): Dictionary containing message data.
-
-        Returns:
-            bool: True if latitude and longitude are present, False otherwise.
-        """
-        msg_keys = message.keys()
-        has_data = "lat" in msg_keys and "lon" in msg_keys
-        return has_data
-
-    def _has_course(self, message):
-        """
-        Check if the message contains course and speed data.
-
-        Parameters:
-            message (dict): Dictionary containing message data.
-
-        Returns:
-            bool: True if course and speed are present, False otherwise.
-        """
-        msg_keys = message.keys()
-        has_data = "course" in msg_keys and "speed" in msg_keys
-        return has_data
-
     def _get_ais_data(self, ais_message, gunnerus_data):
         """
         Extract AIS parameters for ARPA.
@@ -112,51 +84,42 @@ class arpa:
         Returns:
             dict or None: Dictionary containing extracted AIS parameters if AIS data is valid, None otherwise.
         """
-        ais_has_coords = self._has_coords(ais_message)
-        lon, lat, course, speed_kn = (None, None, None, None)
+        lon, lat, course, speed_kn = (ais_message.lon, ais_message.lat, 0, 0)
 
-        if ais_has_coords:
-            lon = ais_message["lon"]
-            lat = ais_message["lat"]
-            ais_has_course = self._has_course(ais_message)
+        if ais_message.course is not None:
+            course = ais_message.course
+        if ais_message.speed is not None:
+            speed_kn = ais_message.speed
 
-            if ais_has_course:
-                course = ais_message["course"]
-                speed_kn = ais_message["speed"]
-            else:
-                course = 0
-                speed_kn = 0
+        po_x, po_y, _ = self._transform.coords_to_xyz(
+            northings=lat,
+            eastings=lon,
+            altitude=0,
+            y_o=gunnerus_data.lat,
+            x_o=gunnerus_data.lon,
+            z_o=0,
+        )
 
-            po_x, po_y, _ = self._transform.coords_to_xyz(
-                northings=lat,
-                eastings=lon,
-                altitude=0,
-                y_o=gunnerus_data.lat,
-                x_o=gunnerus_data.lon,
-                z_o=0,
-            )
+        uo = self._transform.kn_to_mps(speed_kn)
+        zo = np.array(
+            [[math.sin(math.radians(course))], [math.cos(math.radians(course))]]
+        )
 
-            uo = self._transform.kn_to_mps(speed_kn)
-            zo = np.array(
-                [[math.sin(math.radians(course))], [math.cos(math.radians(course))]]
-            )
+        uo_x = zo[0][0] * uo
+        uo_y = zo[1][0] * uo
 
-            uo_x = zo[0][0] * uo
-            uo_y = zo[1][0] * uo
+        ais_data = AIS_NED(
+            po_x=po_x,
+            po_y=po_y,
+            uo=uo,
+            zo=zo,
+            uo_x=uo_x,
+            uo_y=uo_y,
+            course=course,
+            mmsi=ais_message.mmsi,
+        )
 
-            ais_data = AIS_NED(
-                po_x=po_x,
-                po_y=po_y,
-                uo=uo,
-                zo=zo,
-                uo_x=uo_x,
-                uo_y=uo_y,
-                course=course,
-                mmsi=ais_message["mmsi"],
-            )
-
-            return ais_data
-        return None
+        return ais_data
 
     def _get_gunnerus_data(self):
         """
@@ -168,7 +131,6 @@ class arpa:
         """
         gunn_speed = None
         gunn_course = None
-
         gunnerus_data = copy.deepcopy(self._gunnerus_data)
 
         if self._gunnerus_data is None:
@@ -392,7 +354,7 @@ class arpa:
                 return None, None
             ais_message = ais_data[ais_id]
 
-            if str(ais_message["mmsi"]) == self._gunnerus_mmsi:
+            if str(ais_message.mmsi) == self._gunnerus_mmsi:
                 continue
 
             ais_data_item = self._get_ais_data(ais_message, gunn_data)

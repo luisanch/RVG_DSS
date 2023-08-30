@@ -26,8 +26,6 @@ from pydantic import validate_arguments
 @validate_arguments
 @dataclass
 class RVG_Init:
-    """Class for keeping track of an item in inventory."""
-
     lat: float
     lat_dir: str
     lon: float
