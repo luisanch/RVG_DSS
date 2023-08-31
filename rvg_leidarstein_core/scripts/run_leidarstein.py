@@ -8,8 +8,7 @@ It initializes and coordinates various components of the application,
 including data processing, communication with external systems, and collision avoidance.
 
 Note:
-- This script is meant to be executed as the main entry point of the application.
-- The script is an example representation and should be adapted to actual use cases.
+- This script is meant to be executed as the main entry point of the application. 
 """
 
 from rvg_leidarstein_core.core import core

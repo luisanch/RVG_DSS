@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 """
-Module: colav_manager.py
-Description: Control and Collision Avoidance (COLAV) manager responsible for coordinating
-             the ARPA (Automatic Radar Plotting Aid) and the control barrier function (CBF) modules.
+Module: colav_manager
+
+Description:
+Control and Collision Avoidance (COLAV) manager responsible for coordinating
+the ARPA (Automatic Radar Plotting Aid) and the control barrier function (CBF) modules.
 """
 
 from rvg_leidarstein_core.data_relay.rvg_leidarstein_websocket import (
@@ -28,16 +30,14 @@ class colav_manager:
         safety_radius_tol=1.5,
         max_d_2_cpa=2000,
         gunnerus_mmsi="",
-        websocket=rvg_leidarstein_websocket, 
+        websocket=rvg_leidarstein_websocket,
         print_comp_t=False,
         prediction_t=600,
     ):
         """
-        Collision Avoidance (COLAV) manager responsible for coordinating the ARPA
-        (Automatic Radar Plotting Aid) and the control barrier function (CBF)
-        modules.
+        Initialize the Collision Avoidance (COLAV) manager.
 
-        Parameters:
+        Args:
             enable (bool): Flag to enable or disable the COLAV manager. Default is True.
             update_interval (float): Time interval (in seconds) for updating the COLAV system. Default is 1 second.
             safety_radius_m (float): Safety radius in meters for collision avoidance. Default is 200 meters.
@@ -45,19 +45,52 @@ class colav_manager:
             max_d_2_cpa (float): Maximum distance to the closest point of approach. Default is 2000 meters.
             gunnerus_mmsi (str): MMSI (Maritime Mobile Service Identity) of the Gunnerus vessel.
             websocket (class): Websocket class for communication. Default is rvg_leidarstein_websocket.
-            dummy_gunnerus (dict): Dummy Gunnerus vessel data for testing. Default is None.
-            dummy_vessel (dict): Dummy vessel data for testing. Default is None.
             print_comp_t (bool): Flag to print computation time. Default is False.
-            cbf_type (str): Type of CBF to use. Available options are 'uni' (unicycle model) or '4dof' (four degrees of freedom model).
-                            Default is '4dof'.
             prediction_t (float): Prediction time in seconds for the COLAV system. Default is 600 seconds.
+
+        Attributes:
+            _cbf_message_id (str): Message ID for CBF data.
+            _arpa_message_id (str): Message ID for ARPA data.
+            _encounters_message_id (str): Message ID for encounters data.
+            _gunnerus_data (dict): Gunnerus vessel data for COLAV system.
+            _ais_data (dict): AIS (Automatic Identification System) data for COLAV system.
+            websocket (class): Websocket class for communication.
+            _running (bool): Flag to indicate whether the COLAV manager is running.
+            enable (bool): Flag to enable or disable the COLAV manager.
+            _update_interval (float): Time interval for updating the COLAV system.
+            gunnerus_mmsi (str): MMSI of the Gunnerus vessel.
+            _timeout (float): Timeout for updates.
+            _transform (simulation_transform): Simulation transformation object.
+            _prediction_interval (float): Prediction time interval.
+            _safety_radius_m (float): Safety radius in meters.
+            _safety_radius_tol (float): Tolerance for safety radius.
+            _safety_radius_nm (float): Safety radius in nautical miles.
+            _safety_radius_deg (float): Safety radius in degrees.
+            _max_d_2_cpa (float): Maximum distance to the closest point of approach.
+            print_c_time (bool): Flag to print computation time.
+            prediction_t (float): Prediction time for the COLAV system.
+            _encounter_classifiers (dict): Dictionary of encounter classifiers.
+            _d_enter_up_cpa (float): Distance for entering upper CPA.
+            _t_enter_up_cpa (float): Time for entering upper CPA.
+            _t_enter_low_cpa (float): Time for entering lower CPA.
+            _d_exit_low_cpa (float): Distance for exiting lower CPA.
+            _t_exit_low_cpa (float): Time for exiting lower CPA.
+            _t_exit_up_cpa (float): Time for exiting upper CPA.
+            cbf_domains (dict): Dictionary containing CBF domains data.
+
+        Note:
+        - This class coordinates the ARPA and CBF modules for collision avoidance.
+        - The attributes are initialized based on the provided arguments and defaults.
         """
 
+        # Initialize message IDs and data storage
         self._cbf_message_id = "cbf"
         self._arpa_message_id = "arpa"
         self._encounters_message_id = "encounters"
         self._gunnerus_data = {}
         self._ais_data = {}
+
+        # Initialize communication and configuration attributes
         self.websocket = websocket
         self._running = False
         self.enable = enable
@@ -70,7 +103,7 @@ class colav_manager:
         self._safety_radius_tol = safety_radius_tol
         self._safety_radius_nm = self._transform.m_to_nm(safety_radius_m)
         self._safety_radius_deg = self._transform.nm_to_deg(self._safety_radius_nm)
-        self._max_d_2_cpa = max_d_2_cpa  
+        self._max_d_2_cpa = max_d_2_cpa
         self.print_c_time = print_comp_t
         self.prediction_t = prediction_t
         self._encounter_classifiers = {}
@@ -114,6 +147,7 @@ class colav_manager:
         }
         self.load_cbf_domain_data()
 
+        # Initialize ARPA and CBF modules
         self._arpa = arpa(
             safety_radius_m=self._safety_radius_m,
             safety_radius_tol=self._safety_radius_tol,
@@ -131,6 +165,12 @@ class colav_manager:
         )
 
     def update_cbf_domain_data(self):
+        """
+        Update the CBF domains data from the WebSocket communication.
+
+        Returns:
+            None
+        """
         if "cbf_domains" in self.websocket.received_data:
             if self.cbf_domains == self.websocket.received_data["cbf_domains"]:
                 return
@@ -140,6 +180,12 @@ class colav_manager:
                 outfile.write(json_object)
 
     def load_cbf_domain_data(self):
+        """
+        Load CBF domains data from a JSON file.
+
+        Returns:
+            None
+        """
         # Opening JSON file
         f = open("cbf_domains.json")
 
@@ -153,6 +199,12 @@ class colav_manager:
         f.close()
 
     def compose_encounters_message(self):
+        """
+        Compose an encounters message for sending via WebSocket.
+
+        Returns:
+            str: Encounters message in JSON format.
+        """
         vessel_ids = self._encounter_classifiers.keys()
         encounters = {}
         for mmsi in vessel_ids:
@@ -161,10 +213,24 @@ class colav_manager:
         return json
 
     def _update_encounter_classifiers(self, rvg_data, ais_data):
-        # initialize classifiers
+        """
+        Update encounter classifiers based on AIS data.
+
+        Args:
+            rvg_data (RVGData): RVG vessel data.
+            ais_data (list): List of AIS (Automatic Identification System) data.
+
+        Returns:
+            None
+        """
+        # Initialize AIS keys
         ais_keys = []
+
+        # Iterate through AIS data to update classifiers
         for ais in ais_data:
             ais_keys.append(ais.mmsi)
+
+            # Create a new encounter classifier if not already present
             if ais.mmsi not in self._encounter_classifiers:
                 self._encounter_classifiers[ais.mmsi] = encounter_classifier(
                     d_enter_up_cpa=self._d_enter_up_cpa,
@@ -176,6 +242,7 @@ class colav_manager:
                 )
 
             if ais.mmsi in self._encounter_classifiers:
+                # Update encounter classifier based on AIS data
                 if ais.safety_params:
                     self._encounter_classifiers[ais.mmsi].get_encounter_type(
                         rvg_course=np.deg2rad(rvg_data.course),
@@ -204,12 +271,22 @@ class colav_manager:
                         t_2_cpa=ais.t_2_cpa,
                     )
 
-        # delete unused classifiers
+        # Delete encounter classifiers that are no longer needed
+
         for key in ais_keys:
             if key not in self._encounter_classifiers:
                 del self._encounter_classifiers[key]
 
     def augment_arpa_data(self, arpa_data):
+        """
+        Augment ARPA (Automatic Radar Plotting Aid) data with encounter information.
+
+        Args:
+            arpa_data (list): List of ARPA data entries.
+
+        Returns:
+            list: Augmented ARPA data with encounter information.
+        """
         for arpa_entry in arpa_data:
             if arpa_entry.mmsi in self._encounter_classifiers:
                 id = arpa_entry.mmsi
