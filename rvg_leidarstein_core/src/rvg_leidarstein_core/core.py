@@ -12,9 +12,7 @@ Attributes:
 - colav_manager: colav_manager
     The instance of the COLAV manager.
 - websocket: rvg_leidarstein_websocket
-    The instance of the WebSocket used for communication.
-- log_file: str, optional
-    The path to a log file if a log file should be used as the data source.
+    The instance of the WebSocket used for communication. 
 """
 from threading import Thread
 from .serializers.serializer import serializer
@@ -38,9 +36,7 @@ class core:
     colav_manager : colav_manager
         The instance of the COLAV manager.
     websocket : rvg_leidarstein_websocket
-        The instance of the WebSocket used for communication.
-    log_file : str, optional
-        The path to a log file if a log file should be used as the data source.
+        The instance of the WebSocket used for communication. 
 
     Attributes:
     -----------
