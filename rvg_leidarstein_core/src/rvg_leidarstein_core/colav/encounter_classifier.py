@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from math import atan2, pi, cos, sin, atan
 import numpy as np
 from .encounter_classifier_dsm import encounter_classifier_dsm
@@ -5,6 +6,9 @@ from .enums import Encounters, Range_Situation
 
 
 class encounter_classifier:
+    """
+    The 'encounter_classifier' class is responsible for classifying encounters based on various parameters.
+    """
     def __init__(
         self,
         _theta_1=np.deg2rad(20),
@@ -16,6 +20,19 @@ class encounter_classifier:
         t_exit_low_cpa=0,
         t_exit_up_cpa=330,
     ):
+        """
+        Initialize the encounter_classifier object with the specified parameters.
+
+        Parameters:
+            _theta_1 (float): Inner angle threshold in radians. Default is 20 degrees.
+            theta_2 (float): Outer angle threshold in radians. Default is 120 degrees.
+            d_enter_up_cpa (float): Distance threshold for entering the upper CPA in meters. Default is 150.
+            t_enter_up_cpa (float): Time threshold for entering the upper CPA in seconds. Default is 300.
+            t_enter_low_cpa (float): Time threshold for entering the lower CPA in seconds. Default is 0.
+            d_exit_low_cpa (float): Distance threshold for exiting the lower CPA in meters. Default is 250.
+            t_exit_low_cpa (float): Time threshold for exiting the lower CPA in seconds. Default is 0.
+            t_exit_up_cpa (float): Time threshold for exiting the upper CPA in seconds. Default is 330.
+        """
         self._theta_1 = _theta_1
         self._theta_2 = theta_2
         self._dsm = encounter_classifier_dsm(
@@ -65,6 +82,17 @@ class encounter_classifier:
         }
 
     def is_angle_in_range(self, angle_radians, start_range_radians, end_range_radians):
+        """
+        Check if an angle is within a specified range.
+
+        Parameters:
+            angle_radians (float): Angle in radians to be checked.
+            start_range_radians (float): Starting angle of the range in radians.
+            end_range_radians (float): Ending angle of the range in radians.
+
+        Returns:
+            bool: True if the angle is within the range, False otherwise.
+        """
         # Normalize the input angle to [0, 2π) radians range
         normalized_angle = angle_radians % (2 * pi)
 
@@ -83,7 +111,23 @@ class encounter_classifier:
 
     def identify_range_situation(
         self, rvg_course, ts_course, e, e_ts, n, n_ts, u_rvg, u_ts
-    ):
+    ):  
+        """
+        Identify the range situation based on courses and velocities.
+
+        Parameters:
+            rvg_course (float): RVG's course in radians.
+            ts_course (float): Target ship's course in radians.
+            e (float): RVG's easting coordinate.
+            e_ts (float): Target ship's easting coordinate.
+            n (float): RVG's northing coordinate.
+            n_ts (float): Target ship's northing coordinate.
+            u_rvg (float): RVG's velocity.
+            u_ts (float): Target ship's velocity.
+
+        Returns:
+            Range_Situation: Range situation enum value.
+        """
         v_os = np.array([[u_rvg * sin(rvg_course)], [u_rvg * cos(rvg_course)]])
         v_ts = np.array([[u_ts * sin(ts_course)], [u_ts * cos(ts_course)]])
         v_rel = v_ts - v_os
@@ -97,8 +141,21 @@ class encounter_classifier:
 
         return range_situation
 
-    # Relative Bearing Sector
+
     def get_rbs(self, rvg_course, e, e_ts, n, n_ts):
+        """
+        Get the Relative Bearing Sector (RBS) based on RVG's course and coordinates.
+
+        Parameters:
+            rvg_course (float): RVG's course in radians.
+            e (float): RVG's easting coordinate.
+            e_ts (float): Target ship's easting coordinate.
+            n (float): RVG's northing coordinate.
+            n_ts (float): Target ship's northing coordinate.
+
+        Returns:
+            int: RBS value representing the sector.
+        """
         phi = atan2((e_ts - e), (n_ts - n)) - rvg_course
         rbs = 0
 
@@ -135,6 +192,19 @@ class encounter_classifier:
 
     # Situation Sector
     def get_ss(self, ts_course, e, e_ts, n, n_ts):
+        """
+        Get the Situation Sector (SS) based on target ship's course and coordinates.
+
+        Parameters:
+            ts_course (float): Target ship's course in radians.
+            e (float): RVG's easting coordinate.
+            e_ts (float): Target ship's easting coordinate.
+            n (float): RVG's northing coordinate.
+            n_ts (float): Target ship's northing coordinate.
+
+        Returns:
+            tuple: SS value representing the sector and the sector's bounds.
+        """
         phi_ts = atan2((e - e_ts), (n - n_ts))
 
         theta_11 = self._theta_1 + phi_ts
@@ -170,6 +240,22 @@ class encounter_classifier:
         return ss, theta_11, theta_22
 
     def classify_encounter(self, rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts):
+        """
+        Classify the encounter based on various parameters.
+
+        Parameters:
+            rvg_course (float): RVG's course in radians.
+            ts_course (float): Target ship's course in radians.
+            e (float): RVG's easting coordinate.
+            e_ts (float): Target ship's easting coordinate.
+            n (float): RVG's northing coordinate.
+            n_ts (float): Target ship's northing coordinate.
+            v_rvg (float): RVG's velocity.
+            v_ts (float): Target ship's velocity.
+
+        Returns:
+            Encounters: Encounters enum value representing the classification.
+        """
         rbs = self.get_rbs(rvg_course=rvg_course, e=e, e_ts=e_ts, n=n, n_ts=n_ts)
         ss, theta_11, theta_22 = self.get_ss(
             ts_course=ts_course, e=e, e_ts=e_ts, n=n, n_ts=n_ts
@@ -203,6 +289,20 @@ class encounter_classifier:
     def get_encounter_type(
         self, rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts, d_at_cpa, t_2_cpa
     ):
+        """
+        Get the encounter type based on various parameters.
+
+        Parameters:
+            rvg_course (float): RVG's course in radians.
+            ts_course (float): Target ship's course in radians.
+            e (float): RVG's easting coordinate.
+            e_ts (float): Target ship's easting coordinate.
+            n (float): RVG's northing coordinate.
+            n_ts (float): Target ship's northing coordinate.
+            v_rvg (float): RVG's velocity.
+            v_ts (float): Target ship's velocity.
+            d_at
+        """
         encounter = self.classify_encounter(
             rvg_course, ts_course, e, e_ts, n, n_ts, v_rvg, v_ts
         )

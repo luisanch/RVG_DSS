@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 """
-Module: cbf_4dof
+Module: cbf_poly
 
-This module contains the 'cbf_4dof' class, which is a subclass of the 'cbf' 
-class and provides control barrier function functionality for a 
-four-degree-of-freedom (4DOF) system.
+This module contains the 'cbf_poly' class, a subclass of 'cbf_4dof', providing control barrier function functionality
+for a four-degree-of-freedom (4DOF) system with polygonal domains.
+
+Classes:
+- cbf_poly: A subclass of 'cbf_4dof' that provides control barrier function functionality
+            for a 4DOF system with polygonal domains.
 """
 
 import math
@@ -20,8 +23,8 @@ from model4dof.models.RVG_maneuvering4DOF import Module_RVGManModel4DOF as model
 
 class cbf_poly(cbf_4dof):
     """
-    The 'cbf_4dof' class is a subclass of the 'cbf' class and provides control
-    barrier functionality for a four-degree-of-freedom (4DOF) system.
+    The 'cbf_poly' class is a subclass of 'cbf_4dof' that provides control
+    barrier functionality for a four-degree-of-freedom (4DOF) system with polygonal domains.
     """
 
     def __init__(
@@ -41,7 +44,7 @@ class cbf_poly(cbf_4dof):
         hyst_w=0.00000001,
     ):
         """
-        Initialize the cbf_4dof object with the specified parameters.
+        Initialize the cbf_poly object with the specified parameters.
 
         Parameters:
             safety_radius_m (float): Safety radius in meters.
@@ -75,6 +78,12 @@ class cbf_poly(cbf_4dof):
         self._len_factor = 2.5
 
     def _sort_data(self):
+        """
+        Sort and organize the data for processing.
+
+        Returns:
+            Tuple: A tuple containing sorted and organized data arrays.
+        """
         p = self._gunn_data.p
         u = self._gunn_data.u
         z = self._gunn_data.z
@@ -135,6 +144,19 @@ class cbf_poly(cbf_4dof):
         return converted_data
 
     def _get_translated_domains(self, po, zo, encounters, domains, vessels_len):
+        """
+        Translate and convert domain data to geographic coordinates.
+
+        Parameters:
+            po (np.array): Array containing position data.
+            zo (np.array): Array containing direction data.
+            encounters (list): List of encounter types.
+            domains (list): List of domain data.
+            vessels_len (list): List of vessel lengths.
+
+        Returns:
+            list: List of translated domain data.
+        """
         domain_lines = []
         for idx, encounter in enumerate(encounters):
             domain = domains[encounter]
@@ -177,7 +199,17 @@ class cbf_poly(cbf_4dof):
         return domain_lines
 
     def _apply_domain(self, domain, vessel_length, zo_init):
-        # apply the selected domain to the own vessel
+        """
+        Apply the selected domain to the own vessel.
+
+        Parameters:
+            domain (dict): Domain data.
+            vessel_length (float): Vessel length.
+            zo_init (np.array): Initial direction data.
+
+        Returns:
+            tuple: Tuple containing transformed direction and distance vector.
+        """
         domain_len = len(domain["d"])
         dq = np.array(domain["d"]) * vessel_length
         tq_d = np.zeros((2, domain_len))
@@ -193,8 +225,25 @@ class cbf_poly(cbf_4dof):
     def _select_active_constraint(
         self, tq_d, dq, pe, u, uo, z, zo, B1_p, B2_p, h_p, rd_n
     ):
-        # choose which of the half plane constraints should be enforced at any
-        # given time for the encounter
+        """
+        Select the active constraint for control barrier function calculation.
+
+        Parameters:
+            tq_d (np.array): Vector containing desired orientation.
+            dq (np.array): Vector containing distance data.
+            pe (np.array): Vector containing position error.
+            u (float): Surge velocity.
+            uo (float): Surge velocity of other vessels.
+            z (np.array): Vector containing orientation data.
+            zo (np.array): Vector containing direction data.
+            B1_p (float): Previous value of B1.
+            B2_p (float): Previous value of B2.
+            h_p (int): Previous value of h.
+            rd_n (float): Nominal control value.
+
+        Returns:
+            tuple: Tuple containing selected active constraint values.
+        """
         B1 = dq.T - (tq_d.T @ (pe)).flatten()
         B1_dot = (-tq_d.T @ (u * z - uo * zo)).flatten()
         B2 = B1_dot + (1 / self._gamma_1) * B1
@@ -247,7 +296,7 @@ class cbf_poly(cbf_4dof):
             ret_var (object): Return variable.
 
         Returns:
-            dict: Dictionary containing processed control barrier function data.
+            CBF_Data: Object containing processed control barrier function data.
         """
 
         self._running = True
