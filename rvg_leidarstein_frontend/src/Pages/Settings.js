@@ -55,6 +55,7 @@ export default function Settings(props) {
 
   const handleSimMode = (event) => {
     update("simMode", event.target.value);
+    update("showSimControls", event.target.value == "4dof")
     const message = {
       type: "datain",
       content: {

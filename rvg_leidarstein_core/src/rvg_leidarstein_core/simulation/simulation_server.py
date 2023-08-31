@@ -58,7 +58,7 @@ class simulation_server:
         serializer=serializer,
         websocket=rvg_leidarstein_websocket,
         distance_filter=None,
-        predicted_interval=30,
+        predicted_interval=60,
         colav_manager=colav_manager,
         filt_order=3,
         filt_cutfreq=0.1,
@@ -328,7 +328,7 @@ class simulation_server:
                 self._colav_manager.update_ais_data(message)
                 self._set_history(message)
                 self._set_predicted_position(message)
-                json_msg = self._compose_msg(asdict(message)) 
+                json_msg = self._compose_msg(asdict(message))
                 self.websocket.send(json_msg)
 
     def pop_buffer(self, index=None):

@@ -34,7 +34,7 @@ function App() {
     shortTooltips: true,
     navigationMode: false,
     showSimControls: false,
-    simMode: "rt",
+    simMode: "4dof",
     showDomains: true,
   });
 
