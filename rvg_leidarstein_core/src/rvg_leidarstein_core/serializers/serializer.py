@@ -31,10 +31,6 @@ class serializer:
         for receiving and parsing messages and creating DataFrames for serialization.
 
         Args:
-            save_headers (tuple): A tuple containing two elements: a boolean
-                                indicating whether to save DataFrame headers or
-                                not, and the directory path where DataFrame
-                                headers should be saved as CSV files.
             df_aliases (dict): A dictionary that maps DataFrame aliases (keys) to
                                 lists of attribute names (values). This mapping
                                 defines how DataFrame columns will be created and
@@ -228,7 +224,7 @@ class serializer:
             message = (msg_id, msg_atr, msg_values)
             new_obj = self._serialize_nmea_data(message)
 
-        if new_obj is not None: 
+        if new_obj is not None:
             self.sorted_data.append(new_obj)
         self._datastream_manager.pop_parsed_msg_list()
 
