@@ -9,8 +9,7 @@ function getDomains(cbfObject, settings) {
   }
 
   const listDomains = cbfObject.map((lineGroup) => {
-    const listDomainLines = lineGroup.map((line) => {
-      // console.log(JSON.stringify(line, null,2))
+    const listDomainLines = lineGroup.map((line) => { 
       // Return a GeoJson component representing the previous path
       return (
         <GeoJson
@@ -32,8 +31,7 @@ function getDomains(cbfObject, settings) {
     return listDomainLines;
   });
 
-  // Return the array of previous paths
-  //   console.log(JSON.stringify(listDomains.flat(), null, 2))
+  // Return the array of previous paths 
   return listDomains.flat();
 }
 

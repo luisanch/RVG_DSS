@@ -11,6 +11,7 @@ and safety parameters for vessels in proximity to a reference vessel.
 import math
 import numpy as np
 import copy
+from dataclasses import asdict
 from ..simulation.simulation_transform import simulation_transform
 from .colav_types import AIS_NED, ARPA_Data, RVG_NED, CPA, Safety_Params
 
@@ -459,7 +460,7 @@ class arpa:
                 safety_params = False
                 arpa_out.safety_params = False
 
-            converted_data[arpa_msg.mmsi] = arpa_out
+            converted_data[arpa_msg.mmsi] = asdict(arpa_out)
         return converted_data
 
     def get_ARPA_parameters(self):

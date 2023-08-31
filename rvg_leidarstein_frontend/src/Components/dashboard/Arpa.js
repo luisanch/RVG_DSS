@@ -3,6 +3,7 @@ import { getGeoCircle, getGeoLine } from "../utils";
 import boat from "../../Assets/ships/boat.svg";
 import boat_s from "../../Assets/ships/boat_s.svg";
 import gunnerus from "../../Assets/ships/gunnerus.svg";
+import { jsx } from "@emotion/react";
 
 /**
  * Create a GeoJSON circle feature from a center point, radius in kilometers, and number of points.
@@ -47,6 +48,8 @@ function getArpa(settings, arpaObject, anchor, zoomScale) {
   const listArpa = Object.values(arpaObject).map((arpa, index) => {
     // Check if the ARPA parameters should be displayed based on the settings
     if (!settings.showHitbox) return null;
+
+    console.log();
 
     // Generate a GeoJson element for the CPA line
     let cpa = (
@@ -108,7 +111,7 @@ function getArpa(settings, arpaObject, anchor, zoomScale) {
 
     // Check if the obstacle domain should be displayed based on the settings
     if (arpa.safety_params) {
-      let center = [arpa.lon_o_at_r, arpa.lat_o_at_r]
+      let center = [arpa.lon_o_at_r, arpa.lat_o_at_r];
       const geoCircle = createGeoJSONCircle(
         center,
         arpa.safety_radius / 1000,
@@ -158,10 +161,8 @@ function getArpa(settings, arpaObject, anchor, zoomScale) {
         safety_r,
       ];
     }
-
     return [cpa, cpa_target_vessel, cpa_self_vessel];
   });
-
   return listArpa;
 }
 

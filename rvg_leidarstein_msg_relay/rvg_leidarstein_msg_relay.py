@@ -7,6 +7,7 @@ class rvg_leidarstein_msg_relay(WebSocket):
     def handle(self):
         for client in clients:
             if client != self:
+                print(self.data)
                 client.send_message(self.data) 
 
     def connected(self):

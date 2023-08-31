@@ -10,11 +10,8 @@ function getCourses(aisData) {
   const listCourses = aisData.map((ais) => {
     // Check if AIS data is valid for rendering course line
     if (
-      isNaN(Number(ais.lat)) ||
-      isNaN(Number(ais.lon)) ||
-      !ais.hasOwnProperty("lat_p") ||
-      !ais.hasOwnProperty("lon_p") ||
-      ais.speed <= 0
+      ais.lat_p == null ||
+      ais.lon_p == null  
     ) {
       // If data is not valid, return null (no course line to render)
       return null;

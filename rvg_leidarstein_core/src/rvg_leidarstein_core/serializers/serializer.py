@@ -153,9 +153,9 @@ class serializer:
             if hasattr(ais_message, "course"):
                 new_obj.course = ais_message.course
             if hasattr(ais_message, "heading"):
-                new_obj.course = ais_message.heading
+                new_obj.heading = ais_message.heading
             if hasattr(ais_message, "speed"):
-                new_obj.course = ais_message.speed
+                new_obj.speed = ais_message.speed
             return new_obj
         else:
             return None

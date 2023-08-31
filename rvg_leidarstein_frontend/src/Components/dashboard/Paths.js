@@ -8,7 +8,7 @@ function getPaths(aisData) {
   // Create an array of travel paths based on AIS data
   const listPreviousPaths = aisData.map((ais) => {
     // Check if the latitude or longitude is not a number (invalid data) or the speed is zero or negative
-    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon)) || ais.speed <= 0)
+    if (ais.speed == null || ais.speed <= 0 || ais.pos_history.length < 1)
       return null;
 
     // Return a GeoJson component representing the previous path

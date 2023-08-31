@@ -21,7 +21,7 @@ let messageHistory = [];
 function App() {
   // Filters to process WebSocket data
   const nmeaFilters = ["$GPGGA", "$PSIMSNS"];
-  const aisFilter = "!AI";
+  const aisFilter = "!";
   const colavFilter = "arpa";
   const cbfFilter = "cbf";
   const encounterFilter = "encounters";
@@ -74,8 +74,7 @@ function App() {
    * @returns {object|null} - The parsed message object if it matches the filters, otherwise null.
    */
   function parseDataIn(msgString) {
-    const msg = JSON.parse(msgString).content;
-
+    const msg = JSON.parse(msgString).content; 
     if (
       nmeaFilters.includes(msg.message_id) ||
       msg.message_id.includes(aisFilter) ||

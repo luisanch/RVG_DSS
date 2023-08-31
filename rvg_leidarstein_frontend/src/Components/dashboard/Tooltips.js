@@ -19,8 +19,6 @@ function getTooltips(
 ) {
   // Create an array of tooltips for each AIS data entry
   const listTooltips = aisData.map((ais) => {
-    // Check if the latitude or longitude is not a number (invalid data), and if so, return null (no tooltip)
-    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
 
     // If the AIS object does not have the 'pinTooltip' and 'hoverTooltip' properties, set them to false
     if (!aisObject[ais.mmsi].hasOwnProperty("pinTooltip")) {
@@ -49,11 +47,11 @@ function getTooltips(
       // Extract necessary information from AIS and ARPA data
       const lon = ais.lon;
       const lat = ais.lat;
-      const course = ais.hasOwnProperty("course")
+      const course = ais.course !== null
         ? ais.course.toFixed(2)
         : "--";
       const mmsi = ais.mmsi;
-      const speed = ais.hasOwnProperty("speed") ? ais.speed.toFixed(2) : "--";
+      const speed = ais.speed != null ? ais.speed.toFixed(2) : "--";
       const d2cpa = hasArpa
         ? Number(arpaObject[ais.mmsi]["d_2_cpa"]).toFixed(2)
         : "--";

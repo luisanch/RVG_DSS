@@ -97,7 +97,7 @@ const MyMap = (props) => {
       setGunnerusHeading(data.head_deg);
     }
 
-    if (data.message_id.indexOf("!AI") === 0) {
+    if (data.message_id.indexOf("!") === 0) {
       setAisObjectData(data);
     }
 
@@ -160,6 +160,7 @@ const MyMap = (props) => {
   // Generate previous paths based on AIS data
   const listPreviousPaths = getPaths(aisData);
 
+  // Draw CBF domain lines
   const listCbfDomains = getDomains(cbfDomains, settings);
 
   // Generate countdown element for maneuver countdown
@@ -220,7 +221,7 @@ const MyMap = (props) => {
               }}
             />
           </Overlay>
-          {maneuverCountdown}
+          {/* {maneuverCountdown} */}
 
           {/* Draw Gunnerus marker*/}
           <Marker

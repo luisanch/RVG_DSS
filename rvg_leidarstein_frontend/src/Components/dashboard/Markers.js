@@ -2,12 +2,9 @@ import { Marker } from "pigeon-maps";
 
 // Function to generate map markers for AIS data
 function getMarkers(aisData, aisObject, setTipText, markerSize) {
-
   // Create an array of markers based on AIS data
   const markers = aisData.map((ais) => {
     
-    // Check if the latitude or longitude is not a number (invalid data)
-    if (isNaN(Number(ais.lat)) || isNaN(Number(ais.lon))) return null;
 
     // Return a Marker component for valid AIS data
     return (

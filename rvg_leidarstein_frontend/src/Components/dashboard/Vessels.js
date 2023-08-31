@@ -11,13 +11,7 @@ function getVessels(aisData, zoomScale) {
   // Create an array of vessel icons for each AIS data entry
   const listVessels = aisData.map((ais) => {
     // Check if the latitude, longitude, speed, heading properties are valid, and if not, return null (no vessel icon)
-    if (
-      isNaN(Number(ais.lat)) ||
-      isNaN(Number(ais.lon)) ||
-      ais.speed === 0 ||
-      !ais.hasOwnProperty("heading") ||
-      !ais.hasOwnProperty("speed")
-    )
+    if (ais.heading == null || ais.speed == null || ais.speed <= 0)
       return null;
     // Function to determine the heading (rotation) of the vessel icon
     function rotate_heading(ais_in) {

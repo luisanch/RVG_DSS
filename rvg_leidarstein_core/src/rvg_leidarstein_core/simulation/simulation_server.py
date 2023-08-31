@@ -275,26 +275,6 @@ class simulation_server:
         """
         return json.dumps({"type": msg_type, "content": msg}, default=str)
 
-    def _compose_ais_msg(self, msg, msg_type="datain"):
-        """
-        Compose a JSON message to be sent via the WebSocket.
-
-        This method prepares the incoming message (msg) to be sent via the WebSocket
-        as a JSON string. It sets the historical position information and the predicted
-        position for AIS messages, and then converts the message into a JSON format.
-
-        Parameters:
-        - msg (dict): The message dictionary to be composed.
-        - msg_type (str, optional): The type of the message. Default is "datain".
-
-        Returns:
-        - str: The JSON-encoded message.
-
-        """
-        self._set_history(msg)
-        self._set_predicted_position(msg)
-        return json.dumps({"type": msg_type, "content": asdict(msg)}, default=str)
-
     def _set_gunnerus_coords(self, msg):
         """
         Set the latitude and longitude for the Gunnerus vessel.
@@ -329,29 +309,27 @@ class simulation_server:
 
         if message.message_id == "$PSIMSNS":
             self.rvg_heading = message.head_deg
-            if self.websocket.enable:
-                json_msg = self._compose_msg(asdict(message))
-                self.websocket.send(json_msg)
+            json_msg = self._compose_msg(asdict(message))
+            self.websocket.send(json_msg)
 
         elif message.message_id == "$GPGGA":
-            if self.websocket.enable:
-                json_msg = self._compose_msg(asdict(message))
-                self.websocket.send(json_msg)
+            json_msg = self._compose_msg(asdict(message))
+            self.websocket.send(json_msg)
 
         elif message.message_id == "$GPRMC":
             self._set_gunnerus_coords(message)
             self._colav_manager.update_gunnerus_data(message)
             self.rvg_state = message
-            if self.websocket.enable:
-                json_msg = self._compose_msg(asdict(message))
-                self.websocket.send(json_msg)
+            json_msg = self._compose_msg(asdict(message))
+            self.websocket.send(json_msg)
+
         elif message.message_id.find("!") == 0:
             if self._validate_coords(message, self.distance_filter):
                 self._colav_manager.update_ais_data(message)
-
-                if self.websocket.enable:
-                    json_msg = self._compose_ais_msg(message)
-                    self.websocket.send(json_msg)
+                self._set_history(message)
+                self._set_predicted_position(message)
+                json_msg = self._compose_msg(asdict(message)) 
+                self.websocket.send(json_msg)
 
     def pop_buffer(self, index=None):
         """

@@ -403,7 +403,7 @@ class simulation_4dof(simulation_server):
         while self._running:
             self.check_incoming_controls()
             if len(self._buffer):  # check if rt data should be sent
-                if self._buffer[0].message_id.find("!") == 0:  # send ais messages
+                if self._buffer[0].message_id.find("!") == 0:  # send ais messages 
                     self._send(self._buffer[0])
                 self.pop_buffer(0)
 

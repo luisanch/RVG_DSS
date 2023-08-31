@@ -40,7 +40,7 @@ class rvg_leidarstein_websocket:
         Parameters:
             json_msg (str): The JSON-formatted message to be sent.
         """
-        if self.enable:
+        if self.enable: 
             self.ws.send(json_msg)
 
     def recieve(self):
